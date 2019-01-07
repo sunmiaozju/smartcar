@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="utils" type="util_viz_node" name="util_viz_node">
+    <rosparam file="$(find utils)/params/util_viz.yaml" command="load" />
+  </node>
+</launch>

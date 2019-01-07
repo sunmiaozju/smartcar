@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="voxel_ground_filter" type="voxel_ground_filter_node" name="voxel_ground_filter_node" output="screen">
+        <rosparam file="$(find voxel_ground_filter)/params/voxel_ground_filter_params.yaml" command="load"/>
+    </node>
+
+
+
+</launch>

@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+    <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
+  </node>
+</launch>

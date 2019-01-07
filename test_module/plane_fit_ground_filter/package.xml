@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>plane_ground_filter</name>
+  <version>0.0.1</version>
+  <description>The plane_ground_filter package</description>
+
+
+  <maintainer email="shenzb12@lzu.edu.cn">adamshan</maintainer>
+
+  <license>MIT</license>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>pcl_ros</run_depend>
+</package>

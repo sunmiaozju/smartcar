@@ -1,0 +1,35 @@
+<package>
+  <name>razor_imu_9dof</name>
+  <version>1.1.0</version>
+  <description>
+     razor_imu_9dof is a package that provides a ROS driver
+     for the Sparkfun Razor IMU 9DOF. It also provides Arduino
+     firmware that runs on the Razor board, and which must be
+     installed on the Razor board for the system to work. A node
+     which displays the attitude (roll, pitch and yaw) of the Razor board 
+     (or any IMU) is provided for testing.
+  </description>
+
+  <maintainer email="krirobo@gmail.com">Kristof Robot</maintainer>
+
+  <license>BSD</license>
+
+  <author>Tang Tiong Yew</author>
+  <author>Kristof Robot</author>
+  <author>Paul Bouchier</author>
+  <author>Peter Bartz</author>
+
+  <url type="website">http://ros.org/wiki/razor_imu_9dof</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>dynamic_reconfigure</build_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>python-serial</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+</package>
+
+
