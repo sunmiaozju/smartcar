@@ -1,0 +1,55 @@
+#>>>>>>>>>Smartcar Lab
+
+laser_frame: "/velodyne"                    # smartcar_lab
+imu_topic: "/imu"                   # smartcar_lab
+lidar_topic: "/velodyne_points"                       # smartcar_lab
+
+#>>>>>>>>>Ese
+
+# laser_frame: "laser"                          # ese
+# imu_topic: "/imu/data"                # ese
+# lidar_topic: "/lslidar_point_cloud"                 # ese
+
+#>>>>>>>>Switch
+use_odom: true   # if you want to shut down imu/odom , just set this param "false"
+use_local_target: true
+if_init_pose_with_param: true  # if you want to initial the start-pose with given param, set it "true", or you want to set it in rviz manmally, set it "false"
+debug: true
+method_type: 1   # pcl:0 gpu:1 omp:2 cpu:3
+
+
+#>>>>>>>>Comman params
+map_frame: "map"
+odom_frame: "/odom"
+base_frame: "/base_link"
+
+map_topic: "/map/point_cloud"
+odom_topic: "/odom/imu"
+
+tf_timeout: 1.0 # time waiting for available tf --timeout result breakdown
+odom_timeout: 1.5 # time waiting for next odom msg, too long means large uncertainty --timeout result "useless info"
+
+predict_error_thresh: 1.5
+
+voxel_leaf_size: 1.5
+ndt_resolution: 1.0
+ndt_max_iterations: 25
+ndt_step_size: 0.1
+ndt_epsilon: 0.01
+
+
+# 初始位置参数（if_init_pose_with_param: true)
+init_x: 0.0
+init_y: 0.0
+init_z: 0.0
+init_roll: 0.0
+init_pitch: 0.0
+init_yaw: 0.0
+
+# 点云预处理： 根据半径过滤
+min_scan_range: 1.0  
+max_scan_range: 30
+
+# 更新局部匹配地图相关参数
+length_update_target_map: 3.0  # 定义更新target地图所需要距离
+target_map_radius: 50  # 与扫描到的点云尽心scan半径滤波的半径有关，比scan过滤的半径要大

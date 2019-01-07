@@ -1,0 +1,7 @@
+pub_rate: 1.0
+analyzers:
+  Razor9DofImu:
+    type: diagnostic_aggregator/GenericAnalyzer
+    path: 'Imu'
+    timeout: 2.0
+    contains: ['Razor_Imu']

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>smartcar_msgs</name>
+  <version>0.0.0</version>
+  <description>The package</description>
+  <maintainer email="sunmiao@todo.todo">sunmiao</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+  </export>
+</package>

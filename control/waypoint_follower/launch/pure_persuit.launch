@@ -1,0 +1,23 @@
+<!-- -->
+<launch>
+
+    <arg name="is_linear_interpolation" default="True"/>
+    <arg name="wheel_base" default="0.5"/>
+    <arg name="lookahead_distance_ratio" default="4"/>
+    <arg name="minimum_lookahead_distance_" default="2.5"/>
+    <arg name="const_lookahead_distance_" default="4"/>
+    <arg name="const_velocity_" default="1"/>
+    <arg name="is_const_vel_dis_" default="true"/>
+
+    <!-- rosrun waypoint_follower pure_pursuit -->
+    <node pkg="waypoint_follower" type="pure_persuit" name="pure_pursuit" output="screen" >
+        <param name="is_linear_interpolation" value="$(arg is_linear_interpolation)"/>
+        <param name="wheel_base" value="$(arg wheel_base)"/>
+        <param name="lookahead_distance_ratio" value="$(arg lookahead_distance_ratio)"/>
+        <param name="minimum_lookahead_distance_" value="$(arg minimum_lookahead_distance_)"/>
+        <param name="const_lookahead_distance_" value="$(arg const_lookahead_distance_)"/>
+        <param name="const_velocity_" value="$(arg const_velocity_)"/>
+        <param name="is_const_vel_dis_" value="$(arg is_const_vel_dis_)"/>
+    </node>
+
+</launch>

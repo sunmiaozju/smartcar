@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="ros_gpio_control" type="gpio_control_node" name="gpio_node">
+    <param name="gpio_number" value="296" />
+  </node>
+</launch>

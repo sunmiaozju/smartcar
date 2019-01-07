@@ -1,0 +1,6 @@
+<launch>
+  <arg name="razor_config_file" default="$(find razor_imu_9dof)/config/my_razor_30.yaml"/>
+  <node pkg="razor_imu_9dof" type="imu3_0.py" name="imu_node" output="screen">
+    <rosparam file="$(arg razor_config_file)" command="load"/>
+  </node>
+</launch>

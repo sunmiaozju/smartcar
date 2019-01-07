@@ -1,0 +1,11 @@
+<launch>
+
+
+  <node pkg="tf" type="static_transform_publisher" name="base2laser" args="0.17 0 0.185 0 0 0 1 /base_link /laser 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base2imu" args="0.105 0.16 0.17 0 0 0 1 /base_link /imu_link 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base2rr" args="-0.178 -0.178 -0.165 0 0 0 1 /base_link /wheel_rr 100" />
+
+  <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+    <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
+  </node>
+</launch>

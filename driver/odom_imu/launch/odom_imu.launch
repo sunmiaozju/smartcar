@@ -1,0 +1,17 @@
+<launch>
+  <!-- <node pkg="imu_driver" type="imu_driver_node" name="imu_driver_node" />
+  <include file="$(find ros_arduino_imu)/launch/xrobot_imu.launch" /> -->
+  
+  <node pkg="odom_imu" type="odom_imu_node" name="odom_imu_node" output="screen">
+    <param name="max_interval" type="double" value="2.0" />
+    <param name="angle_vel_sensitive" type="double" value="0.1" />
+    <param name="linear_vel_sensitive" type="double" value="0.1" />
+    <param name="base_frame" type="string" value="/base_link" />
+    <param name="odom_frame" type="string" value="/odom" />
+    <param name="sub_imu_topic" type="string" value="/imu"/>
+    <param name="sub_hall_topic" type="string" value="/imu"/>
+  </node>
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="base2imu" args="0.125 0.125 0.15 0 0 0 1 base_link imu_link 10" /> -->
+
+</launch>

@@ -1,0 +1,23 @@
+<launch>
+    <include file="$(find static_tf)/launch/static_tf.launch" />
+    <!-- <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+    <include file="$(find hall_sensor)/launch/hall_sensor.launch" />
+    <include file="$(find razor_imu_9dof)/launch/razor-pub.launch" /> -->
+
+    <include file="$(find odom_imu)/launch/odom_imu.launch" />
+    
+    <param name="use_sim_time" value="true" type="bool"/>
+    <!-- if use_sim_time, Use "rosbag play -=-clock xx.bag" to play bag -->
+
+    <node pkg="static_map" type="static_map_node" name="static_map_node">
+        <param name="pcd_file" value="$(find static_map)/map_file/zhiquan_43w.pcd" />
+        <param name="map_frame" value="map" />
+        <param name="duration" value="1.0" />
+        <remap from="/static_map" to="/map/point_cloud" />
+    </node>
+    
+    <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+        <rosparam file="$(find ndt_localization)/params/test.yaml" />
+    </node>
+
+</launch>

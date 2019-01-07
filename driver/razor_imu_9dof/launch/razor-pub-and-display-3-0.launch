@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="razor_imu_9dof" type="imu3_0.py" name="imu3_0" output="screen">
+  </node>
+
+  <node pkg="razor_imu_9dof" type="display_3D_visualization.py" name="display_3D_visualization_node" output="screen">
+  </node>
+
+</launch>
