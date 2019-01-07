@@ -9,7 +9,7 @@ namespace waypoint_follower
 static float count;
 // Constructor
 PurePursuitNode::PurePursuitNode() : private_nh_("~"),
-                                     LOOP_RATE_(30),
+                                     LOOP_RATE_(1),
                                      is_waypoint_set_(false),
                                      is_pose_set_(false),
                                      is_velocity_set_(false),
@@ -77,7 +77,7 @@ void PurePursuitNode::run()
         // 信息准备好之后，相应的flag会被置1, 执行一遍pure persuit算法之后，pose，路点，速度的标志位要重置
         if (!is_pose_set_ || !is_waypoint_set_ || !is_velocity_set_)
         {
-            ROS_WARN("Necessary topics are not subscribed yet ... ");
+            // ROS_WARN("Necessary topics are not subscribed yet ... ");
             loop_rate.sleep();
         }
         // 将前视距离与速度关联起来，速度越快，前视觉距离越远

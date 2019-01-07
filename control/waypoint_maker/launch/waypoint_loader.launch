@@ -1,6 +1,6 @@
 <!-- -->
 <launch>
-    <arg name="lane_array_filename" default="/home/sunmiao/work/code/SmartCAR/src/control/waypoint_maker/filtered_waypoints.csv"/>
+    <arg name="lane_array_filename" default="$(find waypoint_maker)/filtered_waypoints.csv"/>
 	<!-- m/s -->
 	<arg name="speed" default="1"/> 
 

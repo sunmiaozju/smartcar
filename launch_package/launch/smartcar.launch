@@ -24,4 +24,7 @@
     <include file="$(find waypoint_maker)/launch/waypoint_loader.launch" />
     <include file="$(find waypoint_follower)/launch/pure_persuit.launch" />
 
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" args="/dev/ttyACM0"/>
+    
+
 </launch>

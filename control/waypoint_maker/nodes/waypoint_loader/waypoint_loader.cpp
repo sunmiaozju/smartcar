@@ -60,7 +60,6 @@ void WaypointLoaderNode::createLaneWaypoint(const std::string &file_path, smartc
         return;
     }
 
-    ROS_INFO("lane data is valid. publishing...");
     FileFormat format = checkFileFormat(file_path.c_str());
     std::vector<smartcar_msgs::Waypoint> wps;
     if (format == FileFormat::ver1)
@@ -205,7 +204,6 @@ FileFormat WaypointLoaderNode::checkFileFormat(const char *filename)
 
 bool WaypointLoaderNode::verifyFileConsistency(const char *filename)
 {
-    ROS_INFO("verify...");
     std::ifstream ifs(filename);
 
     if (!ifs)
@@ -214,7 +212,7 @@ bool WaypointLoaderNode::verifyFileConsistency(const char *filename)
     }
 
     FileFormat format = checkFileFormat(filename);
-    ROS_INFO("file format: %d", static_cast<int>(format)+1);
+    // ROS_INFO("file format: %d", static_cast<int>(format)+1);
     if (format == FileFormat::unknown)
     {
         ROS_ERROR("unknown file format");
