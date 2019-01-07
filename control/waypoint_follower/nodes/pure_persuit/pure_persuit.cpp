@@ -213,7 +213,7 @@ double PurePursuitNode::calcCurvature(geometry_msgs::Point target) const
         else
             curvature = -curvature_MIN_;
     }
-    ROS_INFO("curvature : %lf", curvature);
+    // ROS_INFO("curvature : %lf", curvature);
     return curvature;
 }
 

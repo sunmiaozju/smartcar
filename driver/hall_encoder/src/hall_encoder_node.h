@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <ros/duration.h>
-#include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <geometry_msgs/TwistStamped.h>
 
 namespace hall_encoder
@@ -41,13 +41,11 @@ class HallEncoderNode
     ros::Time start;
     ros::Time now;
     int pub_rate;
-    std::string sub_topic;
-    std::string pub_topic;
 
     void kalman_filter(const double &hall_measure_speed, const double &pre_speed, const double &pre_P_Covariance,
                                     double &cur_speed, double &cur_P_Covariance);
 
-    void callbackFromCurrentVelocity(const std_msgs::BoolConstPtr &msg);
+    void callbackFromCurrentVelocity(const std_msgs::Int32ConstPtr &msg);
 
     void initROS();
 };

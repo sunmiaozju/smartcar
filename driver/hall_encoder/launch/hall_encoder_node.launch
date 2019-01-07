@@ -1,11 +1,9 @@
 <launch>
   <!-- <include file="$(find ros_gpio_control)/launch/gpio.launch" /> -->
   <node pkg="hall_encoder" type="hall_encoder_node" name="hall_encoder_node" output="screen">
-    <param name="magnet_num" type="int" value="1" />
-    <param name="sub_topic" value="/hall_sensor" />
-    <param name="pub_topic" value="/hall_speed" />
-    <param name="wheel_diameter" type="double" value="0.075" />
-    <param name="pub_rate" type="double" value="0.35" />
+    <param name="magnet_num" type="int" value="4" />
+    <param name="wheel_diameter" type="double" value="0.20" />
+    <param name="pub_rate" type="double" value="1.0" />
     <param name="Q_Covariance" type="double" value="0.5" />
     <param name="R_Covariance" type="double" value="0.4" />
   </node>

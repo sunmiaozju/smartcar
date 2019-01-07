@@ -15,7 +15,7 @@ use_odom: true   # if you want to shut down imu/odom , just set this param "fals
 use_local_target: true
 if_init_pose_with_param: true  # if you want to initial the start-pose with given param, set it "true", or you want to set it in rviz manmally, set it "false"
 debug: true
-method_type: 1   # pcl:0 gpu:1 omp:2 cpu:3
+method_type: 3   # pcl:0 gpu:1 omp:2 cpu:3
 
 
 #>>>>>>>>Comman params

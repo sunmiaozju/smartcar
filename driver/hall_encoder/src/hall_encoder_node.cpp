@@ -20,17 +20,15 @@ HallEncoderNode::~HallEncoderNode()
 void HallEncoderNode::initROS()
 {
     // ROS sub
-    sub = nh_.subscribe(sub_topic, 10, &HallEncoderNode::callbackFromCurrentVelocity, this);
+    sub = nh_.subscribe("hall_sensor", 10, &HallEncoderNode::callbackFromCurrentVelocity, this);
 
     // ROS pub
-    pub = nh_.advertise<geometry_msgs::TwistStamped>(pub_topic, 10);
+    pub = nh_.advertise<geometry_msgs::TwistStamped>("hall_speed", 10);
 
     // ROS param
     private_nh_.param("magnet_num", magnet_num, int(1));
-    private_nh_.param("pub_rate", pub_rate, int(10));                   // 10hz
-    private_nh_.param("wheel_diameter", wheel_diameter, double(0.075)); // m
-    private_nh_.param("sub_topic", sub_topic, std::string("/hall_sensor"));
-    private_nh_.param("pub_topic", pub_topic, std::string("/hall_speed"));
+    private_nh_.param("pub_rate", pub_rate, int(1));                   // 1hz
+    private_nh_.param("wheel_diameter", wheel_diameter, double(0.20)); // m
     private_nh_.param("Q_Covariance", Q_Covariance, double(1.5));
     private_nh_.param("R_Covariance", R_Covariance, double(1.0));
 
@@ -40,22 +38,26 @@ void HallEncoderNode::initROS()
     min_interval.fromSec(pub_rate);
 }
 
-void HallEncoderNode::callbackFromCurrentVelocity(const std_msgs::BoolConstPtr &msg)
+void HallEncoderNode::callbackFromCurrentVelocity(const std_msgs::Int32ConstPtr &msg)
 {
     now = ros::Time::now();
     if (!init_flag)
     {
         pre_speed = 0;
+
+        
         pre_P_Covariance = Q_Covariance / 10.;
         start = now;
         init_flag = true;
         return;
     }
 
-    cur_flag = msg->data;
+    cur_flag = (msg->data == 1 ? true : false); 
+
     if (pre_flag != cur_flag)
     {
         count++;
+        // ROS_INFO("COUNT: %d", count);
     }
 
     pre_pre_flag = pre_flag;
@@ -63,9 +65,9 @@ void HallEncoderNode::callbackFromCurrentVelocity(const std_msgs::BoolConstPtr &
     if ((now - start) > min_interval)
     {
         // 因为遇到一次磁铁，霍尔传感器数值变化两次
-        count /= 2;
-
-        double raw_speed = count * pi * wheel_diameter / (magnet_num * (now - start).toSec());
+	// ROS_INFO("COUNT----: %d", count);
+        double raw_speed = count * pi * wheel_diameter / (magnet_num * (now - start).toSec()) / 2.0;
+       
 
         kalman_filter(raw_speed, pre_speed, pre_P_Covariance, cur_speed, cur_P_Covariance);
 
@@ -80,6 +82,7 @@ void HallEncoderNode::callbackFromCurrentVelocity(const std_msgs::BoolConstPtr &
         }
         speed_msg.header.stamp = now;
         speed_msg.twist.linear.x = cur_speed;
+        speed_msg.twist.linear.y = raw_speed;
 
         pub.publish(speed_msg);
         pre_pre_speed = pre_speed;
