@@ -63,16 +63,6 @@ bool NDTLocalization::init()
   }else{
     sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
   }
-  sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_map_topic_, 1, boost::bind(&NDTLocalization::mapCB, this, _1));
-  sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_lidar_topic_, 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
-
-  if(param_use_odom_){
-    sub_odom_ = nh_.subscribe<nav_msgs::Odometry>(param_odom_topic_, 500, boost::bind(&NDTLocalization::odomCB, this, _1));
-  }
-  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
-
-  pub_marker_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
-  pub_marker_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
 
   // set tf_btol and tf_btol.inverse   (base_link -> laser_link)
   tf::StampedTransform transform;
@@ -115,6 +105,17 @@ bool NDTLocalization::init()
     pub_rawodom_ = nh_.advertise<nav_msgs::Odometry>("/map/odom", 10);
     msg_rawodom_.header.frame_id = param_map_frame_;  // nav_msgs::Odometry
   }
+
+  sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_map_topic_, 1, boost::bind(&NDTLocalization::mapCB, this, _1));
+  sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_lidar_topic_, 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
+
+  if(param_use_odom_){
+    sub_odom_ = nh_.subscribe<nav_msgs::Odometry>(param_odom_topic_, 500, boost::bind(&NDTLocalization::odomCB, this, _1));
+  }
+  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
+
+  pub_marker_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
+  pub_marker_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
 
   ROS_INFO("End init NDTLocalization");
   return true;
@@ -216,8 +217,8 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg){
     anh_gpu_ndt_ptr->setStepSize(param_ndt_step_size_);
     anh_gpu_ndt_ptr->setTransformationEpsilon(param_ndt_epsilon_);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr dummy_scan_ptr(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::PointXYZ dummy_point;
+    PointCloudT::Ptr dummy_scan_ptr(new pcl::PointCloud<pcl::PointXYZ>());
+    PointT dummy_point;
     dummy_scan_ptr->push_back(dummy_point);
     anh_gpu_ndt_ptr->setInputSource(dummy_scan_ptr);
 
@@ -237,6 +238,7 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg){
     omp_ndt_.setStepSize(param_ndt_step_size_);
     omp_ndt_.setTransformationEpsilon(param_ndt_epsilon_);
     omp_ndt_.align(*output_cloud, Eigen::Matrix4f::Identity());
+
 #else
     ROS_ERROR("param method_type set to omp, but use_omp not defined!");
 #endif
@@ -434,10 +436,10 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   }
   else if(param_method_type_ == METHOD_CPU){
     cpu_ndt_.setInputSource(scan_ptr);
-    if (param_debug_)
-    {
-      ROS_INFO("Start align cpu");
-    }
+    // if (param_debug_)
+    // {
+    //   ROS_INFO("Start align cpu");
+    // }
     align_start = ros::Time::now();
     cpu_ndt_.align(init_guess);
     align_end = ros::Time::now();
