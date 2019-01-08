@@ -6,7 +6,8 @@ int main(int argc, char *argv[])
 
     NODE_JOINT_PIXEL_POINTCLOUD::PixelCloudFusion pcf_node;
 
-    pcf_node.run();
+    // pcf_node.run();
+    ros::spin();
 
     return 0;
 }

@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
@@ -19,6 +20,7 @@ namespace NODE_JOINT_PIXEL_POINTCLOUD
 class PixelCloudFusion
 {
   ros::NodeHandle nh;
+  ros::NodeHandle nh_private;
   ros::Publisher pub_fusion_cloud;
   ros::Subscriber sub_intrinsics;
   ros::Subscriber sub_image;
@@ -30,6 +32,7 @@ class PixelCloudFusion
   cv::Mat distortion_coefficients; //畸变系数
 
   tf::StampedTransform camera_lidar_tf;
+  tf::TransformListener* transform_listener;
 
   std::string image_frame_id;
 
