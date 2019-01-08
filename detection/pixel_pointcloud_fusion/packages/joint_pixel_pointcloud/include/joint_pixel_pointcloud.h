@@ -1,6 +1,10 @@
 #ifndef NODE_JOINT_PIXEL_POINTCLOUD_H
 #define NODE_JOINT_PIXEL_POINTCLOUD_H
 
+#include <string>
+#include <vector>
+#include <unordered_map>
+
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -32,13 +36,13 @@ class PixelCloudFusion
   cv::Mat distortion_coefficients; //畸变系数
 
   tf::StampedTransform camera_lidar_tf;
-  tf::TransformListener* transform_listener;
+  tf::TransformListener transform_listener;
 
-  std::string image_frame_id;
-
+  bool camera_lidar_tf_ok_;
   bool camera_info_ok_;
   bool processing_;
-  bool camera_lidar_tf_ok_;
+
+  std::string image_frame_id;
 
   float fx, fy, cx, cy;
 
@@ -57,7 +61,6 @@ class PixelCloudFusion
   pcl::PointXYZ TransformPoint(const pcl::PointXYZ &in_point, const tf::StampedTransform &in_transform);
 
 public:
-  void run();
 
   PixelCloudFusion();
 };

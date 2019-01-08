@@ -71,10 +71,13 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromROSMsg(*cloud_msg, *in_cloud);
 
-    std::unordered_map<cv::Point, pcl::PointXYZ> projection_map;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    out_cloud->points.clear();
+
+    pcl::PointXYZRGB colored_3d_point;
+
     // 存储处理后的点云
     std::vector<pcl::PointXYZ> cam_cloud(in_cloud->points.size());
 
@@ -82,42 +85,25 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     {
         cam_cloud[i] = TransformPoint(in_cloud->points[i], camera_lidar_tf);
 
-        int u = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
-        int v = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
+        int col = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
+        int row = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
 
-        if ((u >= 0) && (u < image_size.width) &&
-            (v >= 0) && (v < image_size.height) &&
+        if ((col >= 0) && (col < image_size.width) &&
+            (row >= 0) && (row < image_size.height) &&
             cam_cloud[i].z > 0)
         {
-            projection_map.insert(std::pair<cv::Point, pcl::PointXYZ>(cv::Point(u, v), in_cloud->points[i]));
+            colored_3d_point.x = cam_cloud[i].x;
+            colored_3d_point.y = cam_cloud[i].y;
+            colored_3d_point.z = cam_cloud[i].z;
+
+            cv::Vec3b rgb_pixel = current_frame.at<cv::Vec3b>(row, col);
+            colored_3d_point.r = rgb_pixel[2];
+            colored_3d_point.g = rgb_pixel[1];
+            colored_3d_point.b = rgb_pixel[0];
+            out_cloud->points.push_back(colored_3d_point);
         }
     }
 
-    out_cloud->points.clear();
-
-    for (int row = 0; row < image_size.height; row++)
-    {
-        for (int col = 0; col < image_size.width; col++)
-        {
-            std::unordered_map<cv::Point, pcl::PointXYZ>::const_iterator iterator_3d_2d;
-            pcl::PointXYZ corresponding_3d_point;
-            pcl::PointXYZRGB colored_3d_point;
-            iterator_3d_2d = projection_map.find(cv::Point(col, row));
-
-            if (iterator_3d_2d != projection_map.end())
-            {
-                corresponding_3d_point = iterator_3d_2d->second;
-                cv::Vec3b rgb_pixel = current_frame.at<cv::Vec3b>(row, col);
-                colored_3d_point.x = corresponding_3d_point.x;
-                colored_3d_point.y = corresponding_3d_point.y;
-                colored_3d_point.z = corresponding_3d_point.z;
-                colored_3d_point.r = rgb_pixel[2];
-                colored_3d_point.g = rgb_pixel[1];
-                colored_3d_point.b = rgb_pixel[0];
-                out_cloud->points.push_back(colored_3d_point);
-            }
-        }
-    }
     sensor_msgs::PointCloud2 out_cloud_msg;
     pcl::toROSMsg(*out_cloud, out_cloud_msg);
     out_cloud_msg.header = cloud_msg->header;
@@ -135,7 +121,7 @@ tf::StampedTransform PixelCloudFusion::FindTransform(const std::string &target_f
         // ros::Time(0)指定了时间为0，即获得最新有效的变换。
         // 改变获取当前时间的变换，即改为ros::Time::now(),不过now的话因为监听器有缓存区的原因。一般会出错
         // 参考：https://www.ncnynl.com/archives/201702/1313.html
-        transform_listener->lookupTransform(target_frame, source_frame, ros::Time(0), transform);
+        transform_listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
         camera_lidar_tf_ok_ = true;
         ROS_INFO("joint_pixel_pointcloud : camera-lidar-tf obtained");
     }
@@ -144,7 +130,7 @@ tf::StampedTransform PixelCloudFusion::FindTransform(const std::string &target_f
         ROS_INFO("joint_pixel_pointcloud : %s", ex.what());
     }
 
-    return;
+    return transform;
 }
 
 pcl::PointXYZ PixelCloudFusion::TransformPoint(const pcl::PointXYZ &in_point, const tf::StampedTransform &in_transform)
@@ -156,13 +142,24 @@ pcl::PointXYZ PixelCloudFusion::TransformPoint(const pcl::PointXYZ &in_point, co
 
 void PixelCloudFusion::initROS()
 {
+    std::string pointscloud_input, image_input, camera_info_input, fusison_output_topic;
+    nh_private.param<std::string>("pointcloud_input", pointscloud_input, "/points_raw");
+    nh_private.param<std::string>("image_input", image_input, "/image_rectified");
+    nh_private.param<std::string>("camera_info_input", camera_info_input, "/camera_info");
+    nh_private.param<std::string>("fusison_output_topic", fusison_output_topic, "/points_fused");
+
+    sub_cloud = nh.subscribe(pointscloud_input, 1, &PixelCloudFusion::CloudCallback, this);
+    sub_image = nh.subscribe(image_input, 1, &PixelCloudFusion::ImageCallback, this);
+    sub_intrinsics = nh.subscribe(camera_info_input, 1, &PixelCloudFusion::IntrinsicsCallback, this);
+
+    pub_fusion_cloud = nh.advertise<sensor_msgs::PointCloud2>(fusison_output_topic, 1);
 }
 
-void PixelCloudFusion::run()
-{
-}
-
-PixelCloudFusion::PixelCloudFusion() : nh_private("~")
+PixelCloudFusion::PixelCloudFusion() : nh_private("~"),
+                                       camera_lidar_tf_ok_(false),
+                                       camera_info_ok_(false),
+                                       processing_(false),
+                                       image_frame_id("")
 {
     initROS();
 }
