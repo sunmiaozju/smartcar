@@ -40,7 +40,6 @@ class PixelCloudFusion
 
   bool camera_lidar_tf_ok_;
   bool camera_info_ok_;
-  bool processing_;
 
   std::string image_frame_id;
 

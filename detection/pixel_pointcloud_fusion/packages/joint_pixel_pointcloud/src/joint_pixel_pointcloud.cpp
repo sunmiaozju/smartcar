@@ -6,12 +6,7 @@ void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr &image_m
 {
     if (!camera_info_ok_)
     {
-        ROS_INFO("joint_pixel_pointcloud waiting for intrinsics to be availiable");
-    }
-
-    if (processing_)
-    {
-        return;
+        ROS_INFO("joint_pixel_pointcloud : waiting for intrinsics to be availiable");
     }
 
     cv_bridge::CvImagePtr cv_image = cv_bridge::toCvCopy(image_msg, "bgr8");
@@ -158,7 +153,6 @@ void PixelCloudFusion::initROS()
 PixelCloudFusion::PixelCloudFusion() : nh_private("~"),
                                        camera_lidar_tf_ok_(false),
                                        camera_info_ok_(false),
-                                       processing_(false),
                                        image_frame_id("")
 {
     initROS();
