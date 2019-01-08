@@ -4,14 +4,9 @@
     <arg name="camera_info_input" default="/camera_info" /> <!-- CameraInfo source topic-->
     <arg name="fusion_output_topic" default="/points_output"/>
 
-    <node name="autoware_image_rectifier" pkg="image_processor" type="image_rectifier" output="screen">
-        <param name="image_input" value="$(arg image_input)" />
-        <param name="camera_info_input" value="$(arg camera_info_input)" />
-    </node>
-
     <node name="pixel_cloud_fusion_01" pkg="pixel_cloud_fusion" type="pixel_cloud_fusion" output="screen">
         <param name="pointcloud_input" value="$(arg pointcloud_input)" />
-        <param name="image_input" value="/image_rectified" />
+        <param name="image_input" value="$(arg image_input)" />
         <param name="camera_info_input" value="$(arg camera_info_input)" />
         <param name="fusion_output_topic" value="$(arg fusion_output_topic)" />
     </node>

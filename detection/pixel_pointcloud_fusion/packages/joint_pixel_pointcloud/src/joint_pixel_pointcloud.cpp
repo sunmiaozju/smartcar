@@ -35,6 +35,12 @@ void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo &intrins
         }
     }
 
+    distortion_coefficients = cv::Mat(1, 5, CV_64F);
+    for (int col = 0; col < 5; col++)
+    {
+        distortion_coefficients.at<double>(col) = intrinsisc_msg.D[col];
+    }
+
     fx = static_cast<float>(intrinsisc_msg.P[0]);
     fy = static_cast<float>(intrinsisc_msg.P[5]);
     cx = static_cast<float>(intrinsisc_msg.P[2]);
@@ -139,7 +145,7 @@ void PixelCloudFusion::initROS()
 {
     std::string pointscloud_input, image_input, camera_info_input, fusison_output_topic;
     nh_private.param<std::string>("pointcloud_input", pointscloud_input, "/points_raw");
-    nh_private.param<std::string>("image_input", image_input, "/image_rectified");
+    nh_private.param<std::string>("image_input", image_input, "/image_raw");
     nh_private.param<std::string>("camera_info_input", camera_info_input, "/camera_info");
     nh_private.param<std::string>("fusison_output_topic", fusison_output_topic, "/points_fused");
 
