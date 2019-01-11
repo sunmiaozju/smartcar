@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>calibration</name>
+  <version>0.0.0</version>
+  <description>The calibration package</description>
+
+  <maintainer email="sunmiao@todo.todo">sunmiao</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
+  <depend>tf</depend>
+  <depend>geometry_msgs</depend>
+  <depend>image_geometry</depend>
+  <depend>message_filters</depend>
+  <depend>rospy</depend>
+  <depend>std_srvs</depend>
+
+  <build_depend>qtbase5-dev</build_depend>
+  <exec_depend>libqt5-core</exec_depend>
+
+  <test_depend>rostest</test_depend>
+
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

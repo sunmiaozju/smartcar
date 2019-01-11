@@ -13,6 +13,7 @@ void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr &image_m
     cv::Mat image = cv_image->image;
 
     // 图像去畸变
+    // 使用相机内参和畸变系数可以图像去畸变
     cv::undistort(image, current_frame, camera_instrinsics, distortion_coefficients);
 
     image_frame_id = image_msg->header.frame_id;
@@ -25,6 +26,7 @@ void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo &intrins
     image_size.height = intrinsisc_msg.height;
     image_size.width = intrinsisc_msg.width;
 
+    // 相机内参
     camera_instrinsics = cv::Mat(3, 3, CV_64F);
 
     for (int row = 0; row < 3; row++)
@@ -34,13 +36,14 @@ void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo &intrins
             camera_instrinsics.at<double>(row, col) = intrinsisc_msg.K[row * 3 + col];
         }
     }
-
+    
+    // 相机畸变参数
     distortion_coefficients = cv::Mat(1, 5, CV_64F);
     for (int col = 0; col < 5; col++)
     {
         distortion_coefficients.at<double>(col) = intrinsisc_msg.D[col];
     }
-
+    // 投影系数
     fx = static_cast<float>(intrinsisc_msg.P[0]);
     fy = static_cast<float>(intrinsisc_msg.P[5]);
     cx = static_cast<float>(intrinsisc_msg.P[2]);
@@ -85,7 +88,8 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     for (size_t i = 0; i < in_cloud->points.size(); i++)
     {
         cam_cloud[i] = TransformPoint(in_cloud->points[i], camera_lidar_tf);
-
+        
+        // 使用相机内参将三维空间点投影到像素平面
         int col = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
         int row = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
 
