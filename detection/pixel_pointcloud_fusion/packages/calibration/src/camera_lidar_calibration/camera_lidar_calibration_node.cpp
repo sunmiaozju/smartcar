@@ -30,7 +30,7 @@
 	#include <opencv2/contrib/contrib.hpp>
 #endif
 
-#define __APP_NAME__ "autoware_camera_lidar_calibration_node"
+#define __APP_NAME__ "camera_lidar_calibration_node"
 
 class RosCameraLidarApp
 
