@@ -1,5 +1,3 @@
-// Copyright [2015] Takashi Ogura<t.ogura@gmail.com>
-
 #include "cv_camera/driver.h"
 #include <string>
 
