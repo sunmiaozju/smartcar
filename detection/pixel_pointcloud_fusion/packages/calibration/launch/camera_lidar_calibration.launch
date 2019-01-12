@@ -9,7 +9,7 @@ roslaunch autoware_camera_lidar_calibrator camera_lidar_calibration.launch intri
     <arg name="target_frame" default="velodyne"/>
     <arg name="camera_frame" default="camera"/>
 
-    <node if="$(arg compressed_stream)" name="decompress" type="republish" pkg="image_transport" output="screen" args="compressed in:=$(arg image_src) raw out:=$(arg image_src)" />
+    <!-- <node if="$(arg compressed_stream)" name="decompress" type="republish" pkg="image_transport" output="screen" args="compressed in:=$(arg image_src) raw out:=$(arg image_src)" /> -->
 
     <!-- <node pkg="calibration_camera_lidar" type="calibration_publisher" name="calibration_publisher">
         <param name="register_lidar2camera_tf" type="bool" value="false"/>
@@ -26,9 +26,9 @@ roslaunch autoware_camera_lidar_calibrator camera_lidar_calibration.launch intri
         <param name="camera_info_src" value="$(arg camera_info_src)" />
     </node>
 
-    <node pkg="image_view" type="image_view" name="image_view" output="screen">
+    <!-- <node pkg="image_view" type="image_view" name="image_view" output="screen">
         <remap from="image" to="image_rectified" />
-    </node>
+    </node> -->
 
     <node pkg="calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen">
         <param name="image_src" value="/image_rectified" />
