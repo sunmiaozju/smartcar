@@ -52,6 +52,7 @@ add_dependencies(joint_pixel_pointcloud_lib
 #Fusion node
 add_executable(joint_pixel_pointcloud
         src/joint_pixel_pointcloud_node.cpp
+        src/joint_pixel_pointcloud.cpp
         )
 
 target_include_directories(joint_pixel_pointcloud PRIVATE
