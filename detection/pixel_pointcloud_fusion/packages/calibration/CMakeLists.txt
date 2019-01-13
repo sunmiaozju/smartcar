@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
     tf
 )
 find_package(Qt5Core REQUIRED)
+
 find_package(OpenCV REQUIRED)
 find_package(PCL)
 

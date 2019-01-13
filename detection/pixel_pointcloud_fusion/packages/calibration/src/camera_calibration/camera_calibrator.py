@@ -87,7 +87,8 @@ class CalibrationNode:
         self._min_good_enough = min_good_enough
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('calibration')
-        self._autoware_image = cv2.imread( path.join(pkg_path, 'docs/autoware_logo.jpg'), cv2.IMREAD_UNCHANGED)
+        self._autoware_image = cv2.imread( path.join(pkg_path, 'docs/smartcar_logo.png'), cv2.IMREAD_UNCHANGED)
+        self._autoware_image = cv2.resize(self._autoware_image, (100, 25))
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -254,7 +255,8 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.button(display[180:255,x:x+100], "CALIBRATE", self.c.goodenough)
         self.button(display[255:330,x:x+100], "SAVE", self.c.calibrated)
         self.button(display[330:405,x:x+100], "COMMIT", self.c.calibrated)
-        display[405:480,x:x+100] = self._autoware_image
+        display[425:450,x:x+100] = self._autoware_image
+
 
 
     def y(self, i):
