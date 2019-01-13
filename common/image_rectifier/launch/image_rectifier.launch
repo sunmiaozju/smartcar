@@ -1,7 +1,7 @@
 <launch>
 
-    <arg name="image_src" default="/image_raw"/>
-    <arg name="camera_info_src" default="/camera_info"/>
+    <arg name="image_src" default="/cv_camera/image_raw"/>
+    <arg name="camera_info_src" default="/cv_camera/camera_info"/>
     <arg name="image_rectifier_out" default="image_rectified">
 
     <node pkg="image_rectifier" type="image_rectifier_node" name="image_rectifier" output="screen">
