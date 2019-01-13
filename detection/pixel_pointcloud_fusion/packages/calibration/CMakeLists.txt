@@ -59,4 +59,6 @@ catkin_install_python(PROGRAMS
     nodes/cameracheck.py
     scripts/tarfile_calibration.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+
 )
+

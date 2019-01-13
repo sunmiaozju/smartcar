@@ -11,7 +11,7 @@ import sensor_msgs.srv
 import threading
 import time
 import rospkg
-from autoware_camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
 from collections import deque
 from message_filters import ApproximateTimeSynchronizer
 from std_msgs.msg import String
@@ -86,7 +86,7 @@ class CalibrationNode:
         self._camera_name = camera_name
         self._min_good_enough = min_good_enough
         rospack = rospkg.RosPack()
-        pkg_path = rospack.get_path('autoware_camera_lidar_calibrator')
+        pkg_path = rospack.get_path('calibration')
         self._autoware_image = cv2.imread( path.join(pkg_path, 'docs/autoware_logo.jpg'), cv2.IMREAD_UNCHANGED)
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)

@@ -6,8 +6,8 @@ import functools
 import message_filters
 import os
 import rospy
-from autoware_camera_calibration.camera_calibrator import OpenCVCalibrationNode
-from autoware_camera_calibration.calibrator import ChessboardInfo, Patterns
+from camera_calibration.camera_calibrator import OpenCVCalibrationNode
+from camera_calibration.calibrator import ChessboardInfo, Patterns
 from message_filters import ApproximateTimeSynchronizer
 
 

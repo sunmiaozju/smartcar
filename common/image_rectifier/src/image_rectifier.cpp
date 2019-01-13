@@ -31,7 +31,7 @@ void ImageRectifier::ImageCallback(const sensor_msgs::Image &in_image_sensor)
     cv::Mat tmp_image = cv_image->image;
     cv::Mat image;
 
-    if (camera_instrinsics.empty)
+    if (camera_instrinsics.empty())
     {
         ROS_INFO("[%S] make sure camera_info is published", _NODE_NAME_);
         image = tmp_image;
