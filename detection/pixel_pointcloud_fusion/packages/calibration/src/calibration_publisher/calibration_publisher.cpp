@@ -5,6 +5,7 @@
 #include <tf/transform_datatypes.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "smartcar_msgs/ProjectionMatrix.h"
 
 #define _NODE_NAME_ "calibration_publisher"
 
@@ -30,9 +31,63 @@ static bool extrinsics_parsed;
 
 static sensor_msgs::CameraInfo camera_info_msg;
 
+void tfRegistration(const cv::Mat &camExMat, const ros::Time &timeStamp)
+{
+    tf::Matrix3x3 rotation_mat;
+    double roll = 0, pitch = 0, yaw = 0;
+    tf::Quaternion quaternion;
+    tf::Transform transform;
+    static tf::TransformBroadcaster broadcaster;
+
+    rotation_mat.setValue(camExMat.at<double>(0, 0), camExMat.at<double>(0, 1), camExMat.at<double>(0, 2),
+                          camExMat.at<double>(1, 0), camExMat.at<double>(1, 1), camExMat.at<double>(1, 2),
+                          camExMat.at<double>(2, 0), camExMat.at<double>(2, 1), camExMat.at<double>(2, 2));
+
+    rotation_mat.getRPY(roll, pitch, yaw, 1);
+
+    quaternion.setRPY(roll, pitch, yaw);
+
+    transform.setOrigin(tf::Vector3(camExMat.at<double>(0, 3),
+                                    camExMat.at<double>(1, 3),
+                                    camExMat.at<double>(2, 3)));
+
+    transform.setRotation(quaternion);
+
+    broadcaster.sendTransform(tf::StampedTransform(transform, timeStamp, target_frame, camera_frame));
+}
+
+void projectionMatrix_sender(const cv::Mat &projMat, const ros::Time &timeStamp)
+{
+}
+
+void cameraInfo_sender(const cv::Mat &camMat,
+                       const cv::Mat &DistCoeff,
+                       const cv::Size &imgSize,
+                       const std::string &distModel,
+                       const ros::Time &timeStamp)
+{
+}
+
 static void image_raw_callback(const sensor_msgs::Image &image_msg)
 {
-    std::cout << "hello" << std::endl;
+    ros::Time timeStampOfImage;
+    timeStampOfImage.sec = image_msg.header.stamp.sec;
+    timeStampOfImage.nsec = image_msg.header.stamp.nsec;
+
+    if (isRegister_tf)
+    {
+        tfRegistration(CameraExtrinsicMat, timeStampOfImage);
+    }
+
+    if (isPublish_cameraInfo)
+    {
+        cameraInfo_sender(CameraMat, DistCoeff, ImageSize, DistModel, timeStampOfImage);
+    }
+
+    if (isPublish_extrinsic)
+    {
+        projectionMatrix_sender(CameraExtrinsicMat, timeStampOfImage);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -89,7 +144,9 @@ int main(int argc, char *argv[])
 
     pub_camera_info = nh.advertise<sensor_msgs::CameraInfo>(camera_info_topic, 10, true);
 
-    // projection_matrix_topic = nh.advertise<smartcar_msgs::ProjectionMatrix>(projection_matrix_topic, 10, true);
+    pub_projection_matrix = nh.advertise<smartcar_msgs::ProjectionMatrix>(projection_matrix_topic, 10, true);
+
+    ros::spin();
 
     return 0;
 }
