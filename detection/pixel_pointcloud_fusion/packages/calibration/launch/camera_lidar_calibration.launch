@@ -8,7 +8,7 @@ roslaunch autoware_camera_lidar_calibrator camera_lidar_calibration.launch intri
     <arg name="target_frame" default="velodyne"/>
     <arg name="camera_frame" default="camera"/>
 
-    <!-- <node pkg="calibration_camera_lidar" type="calibration_publisher" name="calibration_publisher">
+    <node pkg="calibration_camera_lidar" type="calibration_publisher" name="calibration_publisher">
         <param name="register_lidar2camera_tf" type="bool" value="false"/>
         <param name="publish_extrinsic_mat" type="bool" value="false"/>
         <param name="publish_camera_info" type="bool" value="true"/>
@@ -16,7 +16,7 @@ roslaunch autoware_camera_lidar_calibrator camera_lidar_calibration.launch intri
         <param name="calibration_file" value="$(arg intrinsics_file)"/>
         <param name="target_frame" type="str" value="$(arg target_frame)"/>
         <param name="camera_frame" type="str" value="$(arg camera_frame)"/>
-    </node> -->
+    </node>
 
     <node pkg="image_rectifier" type="image_rectifier_node" name="image_rectifier" output="screen">
         <param name="image_src" value="/cv_camera/image_raw" />

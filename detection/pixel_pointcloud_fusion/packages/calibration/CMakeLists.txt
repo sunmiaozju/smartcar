@@ -13,9 +13,11 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     geometry_msgs
     tf
+    rosconsole
+    std_msgs
 )
-find_package(Qt5Core REQUIRED)
 
+find_package(Qt5Core REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PCL)
 
@@ -28,6 +30,8 @@ catkin_package(CATKIN_DEPENDS
     pcl_ros
     geometry_msgs
     tf
+    std_msgs
+    rosconsole
 )
 
 set(CMAKE_CXX_FLAGS "-O3 -g -Wall ${CMAKE_CXX_FLAGS}")
@@ -51,6 +55,13 @@ target_link_libraries(camera_lidar_calibration_node
     ${PCL_LIBRARIES}
 )
 add_dependencies(camera_lidar_calibration_node ${catkin_EXPORTED_TARGETS})
+
+add_executable(calibration_pub_node 
+            src/calibration_publisher/calibration_publisher.cpp)
+
+add_dependencies(calibration_pub_node ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(calibration_pub_node ${catkin_LIBRARIES})   
 
 #camera intrinsics node
 catkin_python_setup()
