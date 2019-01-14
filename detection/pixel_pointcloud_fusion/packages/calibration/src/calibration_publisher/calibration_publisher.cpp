@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     std::string projection_matrix_topic;
 
     nh_private.param<std::string>("image_topic", image_topic, "/cv_camera/image_raw");
-    nh_private.param<std::string>("camera_info_topic", camera_info_topic, "/cv_camera/camera_info");
+    nh_private.param<std::string>("camera_info_topic", camera_info_topic, "/camera_info");
     nh_private.param<std::string>("projection_matrix_topic", projection_matrix_topic, "/projection_matrix");
 
     nh_private.param<bool>("register_lidar2camera_tf", isRegister_tf, true);

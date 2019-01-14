@@ -5,19 +5,17 @@ namespace image_rectifier
 ImageRectifier::ImageRectifier() : nh_private("~")
 {
     initROS();
+    Loadintrinsics(calibration_file);
 }
 
 void ImageRectifier::initROS()
 {
-    std::string image_raw_topic, camera_info_topic, image_retifier_topic;
-
     nh_private.param<std::string>("image_src", image_raw_topic, "/image_raw");
     nh_private.param<std::string>("camera_info_src", camera_info_topic, "/camera_info");
     nh_private.param<std::string>("image_rectifier_out", image_retifier_topic, "/image_rectified");
+    nh_private.param<std::string>("calibration_file", calibration_file, "");
 
     sub_image_raw = nh.subscribe(image_raw_topic, 1, &ImageRectifier::ImageCallback, this);
-    sub_intrinsics = nh.subscribe(camera_info_topic, 1, &ImageRectifier::IntrinsicsCallback, this);
-
     pub_image_rectifier = nh.advertise<sensor_msgs::Image>(image_retifier_topic, 1);
 }
 
@@ -33,7 +31,7 @@ void ImageRectifier::ImageCallback(const sensor_msgs::Image &in_image_sensor)
 
     if (camera_instrinsics.empty())
     {
-        ROS_INFO("[%S] make sure camera_info is published", _NODE_NAME_);
+        ROS_INFO("[%s] make sure camera_info is published", _NODE_NAME_);
         image = tmp_image;
     }
     else
@@ -49,26 +47,34 @@ void ImageRectifier::ImageCallback(const sensor_msgs::Image &in_image_sensor)
     pub_image_rectifier.publish(out_msg.toImageMsg());
 }
 
-void ImageRectifier::IntrinsicsCallback(const sensor_msgs::CameraInfo &in_message)
+void ImageRectifier::Loadintrinsics(const std::string &calibration_file_path)
 {
-    image_size.height = in_message.height;
-    image_size.width = in_message.width;
+
+    if (calibration_file_path.empty())
+    {
+        ROS_ERROR("[%s] missing calibration file path", _NODE_NAME_);
+        ros::shutdown();
+    }
+
+    cv::FileStorage fs(calibration_file_path, cv::FileStorage::READ);
+
+    if (!fs.isOpened())
+    {
+        ROS_ERROR("[%s] cannot open calibration file %s", _NODE_NAME_, calibration_file_path.c_str());
+        ros::shutdown();
+    }
 
     camera_instrinsics = cv::Mat(3, 3, CV_64F);
-    for (int row = 0; row < 3; row++)
-    {
-
-        for (int col = 0; col < 3; col++)
-        {
-            camera_instrinsics.at<double>(row, col) = in_message.K[row * 3 + col];
-        }
-    }
     distortion_coefficients = cv::Mat(1, 5, CV_64F);
-    
-    for(int col = 0; col < 5; col++)
+
+    cv::Mat dis_tmp;
+    fs["CameraMat"] >> camera_instrinsics;
+    fs["DistCoeff"] >> dis_tmp;
+    fs["ImageSize"] >> image_size;
+
+    for (int col = 0; col < 5; col++)
     {
-        distortion_coefficients.at<double>(col) = in_message.D[col];
+        distortion_coefficients.at<double>(col) = dis_tmp.at<double>(col);
     }
-    
 }
 } // namespace image_rectifier

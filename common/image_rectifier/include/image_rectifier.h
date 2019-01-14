@@ -23,16 +23,17 @@ class ImageRectifier
     ros::NodeHandle nh;
 
     ros::Subscriber sub_image_raw;
-    ros::Subscriber sub_intrinsics;
     ros::Publisher pub_image_rectifier;
 
     cv::Size image_size;
     cv::Mat camera_instrinsics;
     cv::Mat distortion_coefficients;
 
+    std::string image_raw_topic, camera_info_topic, image_retifier_topic, calibration_file;
+
     void ImageCallback(const sensor_msgs::Image &in_image_sensor);
 
-    void IntrinsicsCallback(const sensor_msgs::CameraInfo &in_message);
+    void Loadintrinsics(const std::string &calibration_file_path);
 
     void initROS();
 
