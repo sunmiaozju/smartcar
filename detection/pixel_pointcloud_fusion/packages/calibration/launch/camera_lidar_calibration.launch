@@ -28,12 +28,12 @@ roslaunch autoware_camera_lidar_calibrator camera_lidar_calibration.launch intri
         <param name="image_rectifier_out" value="$(arg image_rectifier_out)"/>
     </node>
 
-    <!-- <node pkg="image_view" type="image_view" name="image_view" output="screen">
-        <remap from="image" to="image_rectified" />
-    </node> -->
+    <node pkg="image_view2" type="image_view2" name="image_view2" output="screen">
+        <remap from="image" to="$(arg image_rectifier_out)" />
+    </node>
 
     <node pkg="calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen">
-        <param name="image_src" value="/image_rectified" />
+        <param name="image_src" value="$(arg image_rectifier_out)" />
         <param name="camera_info_src" value="$(arg camera_info_src)" />
     </node>
 
