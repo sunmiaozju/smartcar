@@ -30,6 +30,7 @@ static bool instrinsics_paresed;
 static bool extrinsics_parsed;
 
 static sensor_msgs::CameraInfo camera_info_msg;
+static smartcar_msgs::ProjectionMatrix extrinsic_matrix_msg;
 
 void tfRegistration(const cv::Mat &camExMat, const ros::Time &timeStamp)
 {
@@ -58,6 +59,21 @@ void tfRegistration(const cv::Mat &camExMat, const ros::Time &timeStamp)
 
 void projectionMatrix_sender(const cv::Mat &projMat, const ros::Time &timeStamp)
 {
+
+    if (!extrinsics_parsed)
+    {
+        for (int row = 0; row < 4; row++)
+        {
+            for (int col = 0; col < 4; col++)
+            {
+                extrinsic_matrix_msg.projection_matirx[row * 4 + col] = projMat.at<double>(row, col);
+            }
+        }
+        extrinsics_parsed = true;
+    }
+    extrinsic_matrix_msg.header.stamp = timeStamp;
+    extrinsic_matrix_msg.header.frame_id = camera_frame;
+    pub_projection_matrix.publish(extrinsic_matrix_msg);
 }
 
 void cameraInfo_sender(const cv::Mat &camMat,
@@ -66,6 +82,51 @@ void cameraInfo_sender(const cv::Mat &camMat,
                        const std::string &distModel,
                        const ros::Time &timeStamp)
 {
+
+    if (!instrinsics_paresed)
+    {
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 3; col++)
+            {
+                camera_info_msg.K[row * 3 + col] = camMat.at<double>(row, col);
+            }
+        }
+
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 4; col++)
+            {
+
+                if (col == 3)
+                {
+                    camera_info_msg.P[row * 4 + col] = 0.0f;
+                }
+                else
+                {
+                    camera_info_msg.P[row * 4 + col] = camMat.at<double>(row, col);
+                }
+            }
+        }
+
+        for (int row = 0; row < DistCoeff.rows; row++)
+        {
+            for (int col = 0; col < DistCoeff.cols; col++)
+            {
+                camera_info_msg.D.push_back(DistCoeff.at<double>(row, col));
+            }
+        }
+        camera_info_msg.distortion_model = distModel;
+        camera_info_msg.height = imgSize.height;
+        camera_info_msg.width = imgSize.width;
+
+        instrinsics_paresed = true;
+    }
+
+    camera_info_msg.header.stamp = timeStamp;
+    camera_info_msg.header.frame_id = camera_frame;
+
+    pub_camera_info.publish(camera_info_msg);
 }
 
 static void image_raw_callback(const sensor_msgs::Image &image_msg)
