@@ -4,7 +4,7 @@ roslaunch autoware_camera_lidar_calibrator camera_lidar_calibration.launch intri
 <launch>
     <arg name="image_src" default="/cv_camera/image_raw" />
     <arg name="camera_info_src" default="/camera_info" />
-    <arg name="calibration_file" default="$(find calibration)/docs/20190113_1301_smartcar_camera_calibration.yaml"/>
+    <arg name="calibration_file" default="$(find calibration)/docs/20190120_111413_autoware_lidar_camera_calibration.yaml"/>
     <arg name="target_frame" default="velodyne"/>
     <arg name="camera_frame" default="camera"/>
     <arg name="projection_matrix_topic" default="/projection_matrix"/>

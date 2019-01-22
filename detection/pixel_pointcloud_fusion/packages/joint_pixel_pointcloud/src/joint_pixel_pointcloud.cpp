@@ -106,6 +106,12 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
             colored_3d_point.g = rgb_pixel[1];
             colored_3d_point.b = rgb_pixel[0];
             out_cloud->points.push_back(colored_3d_point);
+            ROS_INFO("%d, %d", col, row);            
+
+        }
+        else 
+        {
+            ROS_INFO("---------------------------");            
         }
     }
 
