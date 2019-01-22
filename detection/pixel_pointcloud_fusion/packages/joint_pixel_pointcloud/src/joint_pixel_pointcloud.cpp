@@ -7,8 +7,9 @@ void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr &image_m
     if (!camera_info_ok_)
     {
         ROS_INFO("joint_pixel_pointcloud : waiting for intrinsics to be availiable");
+        return;
     }
-
+    
     cv_bridge::CvImagePtr cv_image = cv_bridge::toCvCopy(image_msg, "bgr8");
     cv::Mat image = cv_image->image;
 
@@ -78,6 +79,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     pcl::fromROSMsg(*cloud_msg, *in_cloud);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr test_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     out_cloud->points.clear();
 
     pcl::PointXYZRGB colored_3d_point;
@@ -88,7 +90,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     for (size_t i = 0; i < in_cloud->points.size(); i++)
     {
         cam_cloud[i] = TransformPoint(in_cloud->points[i], camera_lidar_tf);
-        
+        test_cloud->points.push_back(cam_cloud[i]);
         // 使用相机内参将三维空间点投影到像素平面
         int col = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
         int row = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
@@ -111,9 +113,15 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
         }
         else 
         {
-            ROS_INFO("---------------------------");            
+            //ROS_INFO("---------------------------");  
+            ;          
         }
     }
+
+    sensor_msgs::PointCloud2 test_point;
+    pcl::toROSMsg(*test_cloud, test_point);
+    test_point.header = cloud_msg->header;
+    test_transformed.publish(test_point);
 
     sensor_msgs::PointCloud2 out_cloud_msg;
     pcl::toROSMsg(*out_cloud, out_cloud_msg);
@@ -126,7 +134,7 @@ tf::StampedTransform PixelCloudFusion::FindTransform(const std::string &target_f
     tf::StampedTransform transform;
 
     camera_lidar_tf_ok_ = false;
-
+add 
     try
     {
         // ros::Time(0)指定了时间为0，即获得最新有效的变换。
@@ -164,6 +172,8 @@ void PixelCloudFusion::initROS()
     sub_intrinsics = nh.subscribe(camera_info_input, 1, &PixelCloudFusion::IntrinsicsCallback, this);
 
     pub_fusion_cloud = nh.advertise<sensor_msgs::PointCloud2>(fusison_output_topic, 1);
+
+    test_transformed = nh.advertise<sensor_msgs::PointCloud2>("test_transformed", 1);
 }
 
 PixelCloudFusion::PixelCloudFusion() : nh_private("~"),

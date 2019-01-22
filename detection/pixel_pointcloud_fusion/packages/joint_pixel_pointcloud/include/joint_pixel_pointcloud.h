@@ -30,6 +30,8 @@ class PixelCloudFusion
   ros::Subscriber sub_image;
   ros::Subscriber sub_cloud;
 
+  ros::Publisher test_transformed;
+
   cv::Size image_size;
   cv::Mat camera_instrinsics; //相机内参
   cv::Mat current_frame;
