@@ -15,6 +15,7 @@ add_message_files(
         ControlCommandStamped.msg
         Waypoint.msg
         LaneArray.msg
+        PointsImage.msg
         ProjectionMatrix.msg
 )
 
