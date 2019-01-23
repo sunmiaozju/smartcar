@@ -47,17 +47,6 @@ include_directories(
 link_directories(${PCL_LIBRARY_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 
-#camera lidar node
-add_executable(camera_lidar_calibration_node
-        src/camera_lidar_calibration/camera_lidar_calibration_node.cpp
-)
-target_link_libraries(camera_lidar_calibration_node
-    ${OpenCV_LIBRARIES}
-    ${catkin_LIBRARIES}
-    ${PCL_LIBRARIES}
-)
-add_dependencies(camera_lidar_calibration_node ${catkin_EXPORTED_TARGETS})
-
 add_executable(calibration_pub_node 
             src/calibration_publisher/calibration_publisher.cpp)
 

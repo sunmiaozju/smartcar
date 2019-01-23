@@ -66,7 +66,7 @@ void projectionMatrix_sender(const cv::Mat &projMat, const ros::Time &timeStamp)
         {
             for (int col = 0; col < 4; col++)
             {
-                extrinsic_matrix_msg.projection_matirx[row * 4 + col] = projMat.at<double>(row, col);
+                extrinsic_matrix_msg.projection_matrix[row * 4 + col] = projMat.at<double>(row, col);
             }
         }
         extrinsics_parsed = true;
