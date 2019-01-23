@@ -78,7 +78,8 @@ void HallEncoderNode::callbackFromCurrentVelocity(const std_msgs::Int32ConstPtr 
         else
         {
             // Smooth filter, in the premise that velocity won't change drastically.
-            cur_speed = (std::pow(pre_pre_speed, 2) + std::pow(pre_speed, 2) + std::pow(cur_speed, 2)) / (pre_pre_speed + pre_speed + cur_speed);
+            // cur_speed = (0.7 * std::pow(pre_pre_speed, 2) + std::pow(pre_speed, 2) + 1.1 * std::pow(cur_speed, 2)) / (0.7 * pre_pre_speed + pre_speed + 1.1 * cur_speed);
+            cur_speed = 0.2 * pre_pre_speed + 0.2 * pre_speed + 0.6 * cur_speed;
         }
         speed_msg.header.stamp = now;
         speed_msg.twist.linear.x = cur_speed;

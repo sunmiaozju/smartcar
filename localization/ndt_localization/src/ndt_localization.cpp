@@ -50,7 +50,7 @@ bool NDTLocalization::init()
   pnh_.param<double>("ndt_epsilon", param_ndt_epsilon_, 0.01);
   pnh_.param<int>("method_type", param_method_type_, 0);
   pnh_.param<bool>("debug", param_debug_, false);
-  pnh_.param<bool>("init_pose_with_param",param_init_pose_with_param,true);
+  pnh_.param<bool>("if_init_pose_with_param",param_init_pose_with_param,true);
 
   // 更新局部target地图相关参数
   pnh_.param<bool>("use_local_target",use_local_target,false);
@@ -222,7 +222,9 @@ void NDTLocalization::mapCB(const sensor_msgs::PointCloud2::ConstPtr &msg){
     dummy_scan_ptr->push_back(dummy_point);
     anh_gpu_ndt_ptr->setInputSource(dummy_scan_ptr);
 
+    std::cout << "start align" << std::endl;
     anh_gpu_ndt_ptr->align(Eigen::Matrix4f::Identity());
+    std::cout << "finished align" << std::endl;
 
 #else
     ROS_ERROR("param method_type set to cuda, but cuda_found not defined!");
@@ -334,7 +336,9 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
 {
   // TODO main function
   if (!map_init_ || !pose_init_)
-  {
+  { 
+    std::cout << "map_init: " << map_init_ << std::endl;
+    std::cout << "pose_init: " << pose_init_ << std::endl;
     ROS_WARN_STREAM("Cannot localize without given map and initial pose.");
     return;
   }

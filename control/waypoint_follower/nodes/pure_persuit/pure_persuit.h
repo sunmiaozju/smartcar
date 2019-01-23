@@ -6,7 +6,9 @@
 #include <std_msgs/Float32.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
@@ -140,7 +142,8 @@ namespace waypoint_follower {
         geometry_msgs::Pose current_pose_;
         double current_linear_velocity_;
         std::vector <smartcar_msgs::Waypoint> current_waypoints_;
-        bool is_waypoint_set_, is_pose_set_, is_velocity_set_;
+        bool is_velocity_set_;
+        bool is_waypoint_set_, is_pose_set_;
         double command_linear_velocity_;
         double wheel_base_;
         bool is_const_vel_dis_;               // false = dynamic_vel_and_ahead_distance, true = const_vel_and_ahead_distance
@@ -153,7 +156,7 @@ namespace waypoint_follower {
 
         void callbackFromCurrentPose(const geometry_msgs::PoseStampedConstPtr &msg);
 
-        void callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr &msg);
+        void callbackFromCurrentVelocity(const nav_msgs::Odometry &msg);
 
         void callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr &msg);
 
