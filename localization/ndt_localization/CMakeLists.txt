@@ -31,7 +31,6 @@ find_package(catkin REQUIRED COMPONENTS
   # ${PCL_OPENMP_PACKAGES}
 )
 
-
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES 
@@ -46,11 +45,11 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 
-# string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
-# link_directories(${LIBRARY_DIRS})  # 可以将libgpu_ndt.so加到这个路径里，然后就可以链接到了
+string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
+link_directories(${LIBRARY_DIRS})  # 可以将libgpu_ndt.so加到这个路径里，然后就可以链接到了
 
 include_directories(include)
-link_directories(lib)
+# link_directories(lib)
 
 include_directories(
   include
@@ -97,7 +96,26 @@ target_link_libraries(ndt_localization_node
   ndt_localization
 )
 
+add_executable(ndt_test
+  src/ndt_test.cpp
+)
 
+target_link_libraries(ndt_test
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+add_executable(tf_test
+  src/tf_test.cpp
+)
+
+add_dependencies(tf_test
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(tf_test
+  ${catkin_LIBRARIES}
+)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

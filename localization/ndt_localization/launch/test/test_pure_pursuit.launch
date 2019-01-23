@@ -1,0 +1,17 @@
+<launch>
+    <node pkg="pf_localization" type="trajectory_loader.py" name="traj_loader">
+        <param name="trajectory" value="$(find ndt_localization)/trajectories/2018-10-22-20-16-18.traj" />
+        
+    </node>
+    <node pkg="pf_localization" type="pure_pursuit.py" name="pure_pursuit" output="screen">
+        <remap from="/trajectory" to="/loaded_trajectory/recorded_path" />
+        <remap from="/current_pose" to="/ndt/current_pose" />
+        <param name="load_or_not" value="false" />
+        <param name="lookahead" value="4.0" />
+        <param name="max_reaquire" value="5.0" />
+        <param name="speed" value="1.5" />  
+        <param name="wrap" value="0" />
+        <param name="wheelbase" value="0.335" />
+        <param name="publish" value="true" />
+    </node>
+</launch>

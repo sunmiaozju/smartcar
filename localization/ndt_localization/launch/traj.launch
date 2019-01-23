@@ -1,0 +1,12 @@
+<launch>
+  <!-- <node pkg="pf_localization" type="trajectory_builder_rt.py" name="traj_builder">
+    <param name="save_path" value="$(find ndt_localization)/trajectories" />
+    <param name="odom_topic" value="/odom" />
+
+    <remap from="/current_pose" to="/ndt/current_pose" />
+  </node> -->
+  <node pkg="pf_localization" type="trajectory_loader.py" name="traj_loader">
+    <param name="trajectory" value="$(find ndt_localization)/trajectories/2018-10-22-20-16-18.traj" />
+    <param name="publish" value="true" />
+  </node>
+</launch>

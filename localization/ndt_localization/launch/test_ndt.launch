@@ -1,0 +1,46 @@
+<launch>
+
+  <!-- <include file="$(find imu_f)/launch/imu_ahrs.launch" /> -->
+
+  <!-- <node pkg="pcl_ros" type="pcd_to_pointcloud" name="static_map_node" args="$(find static_map)/map_file/0.pcd">
+    <param name="frame_id" value="map" />
+    <remap from="/cloud_pcd" to="/map/point_cloud" />
+  </node> -->
+
+  <include file="$(find common)/launch/static_tf.launch" />
+
+  <node pkg="static_map" type="static_map_node" name="static_map_node">
+    <param name="pcd_file" value="$(find static_map)/map_file/map_1008_filtered.pcd" />
+    <param name="map_frame" value="map" />
+    <param name="duration" value="1.0" />
+    <remap from="/static_map" to="/map/point_cloud" />
+  </node>
+
+  <node pkg="map_server" type="map_server" name="gridmap_node" args="$(find static_map)/map_file/map_1008_filtered_gridmap.yaml">
+  </node>
+
+  <!-- <node pkg="map_filter" type="rt_filter_node" name="rt_filter_node">
+    <param name="filter_x" value="10.0" />
+    <param name="filter_y" value="10.0" />
+    <param name="filter_z" value="10.0" />
+    <param name="frame_id" value="/laser" />
+    <remap from="/raw_pc" to="/lslidar_point_cloud" />
+  </node> -->
+  <include file="$(find lidar_euclidean_cluster_detect)/launch/lidar_euclidean_cluster_detect.launch">
+    <arg name="output_frame" value="/laser" />
+    <arg name="points_node" value="/lslidar_point_cloud" />
+    <arg name="use_gpu" value="true" />
+  </include>
+
+  <include file="$(find odom_imu)/launch/odom_imu.launch" />
+
+  <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+    <rosparam file="$(find ndt_localization)/params/test.yaml" />
+    <!-- <remap from="/odom/imu" to="/imu/odom" /> -->
+    <!-- <remap from="/map/point_cloud" to="cloud_pcd" /> -->
+    <remap from="/lslidar_point_cloud" to="/points_cluster" />
+  </node>
+
+  <!-- <include file="$(find lslidar_c16_decoder)/launch/lslidar_c16.launch" /> -->
+
+</launch>

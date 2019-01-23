@@ -6,19 +6,12 @@
     <include file="$(find razor_imu_9dof)/launch/razor-pub.launch" />
 
     <include file="$(find odom_imu)/launch/odom_imu.launch" />
-
-    <!-- if use_sim_time, Use "rosbag play -=-clock xx.bag" to play bag -->
-    <!-- <param name="use_sim_time" value="true" type="bool"/> -->
-
-    <node pkg="static_map" type="static_map_node" name="static_map_node">
-        <param name="pcd_file" value="$(find static_map)/map_file/yuquan_46w.pcd" />
-        <param name="map_frame" value="map" />
-        <param name="duration" value="1.0" />
-        <remap from="/static_map" to="/map/point_cloud" />
-    </node>
+   
+    <node pkg="map_server" type="map_server" name="global_cost_map_node" args="$(find static_map)/map_file/map.yaml"/>
     
     <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
         <rosparam file="$(find ndt_localization)/params/test.yaml" />
+        <param name="global_map_file" value="$(find static_map)/map_file/yuquan_46w.pcd"/>
     </node>
 
     <include file="$(find waypoint_maker)/launch/waypoint_loader.launch" />

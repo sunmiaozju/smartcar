@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /global1
         - /Pose1
       Splitter Ratio: 0.5
     Tree Height: 775
@@ -27,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -67,7 +68,7 @@ Visualization Manager:
       Max Intensity: 59
       Min Color: 0; 0; 0
       Min Intensity: 11
-      Name: PointCloud2
+      Name: global
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -119,7 +120,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 135.523468
+      Distance: 40.4726257
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -156,4 +157,4 @@ Window Geometry:
     collapsed: false
   Width: 1920
   X: 0
-  Y: 246
+  Y: 24
