@@ -1,0 +1,9 @@
+frame_map: "map"
+car_x: 0.51
+car_y: 0.43
+car_z: 0.48
+bl_x: 10.
+bl_y: -10.
+max_vel: 2.0
+max_ang: 1.0
+len_line: 2.0

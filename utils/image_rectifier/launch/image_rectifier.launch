@@ -1,0 +1,13 @@
+<launch>
+
+    <arg name="image_src" default="/cv_camera/image_raw"/>
+    <arg name="calibration_file" default="$(find calibration)/docs/20190114_213633_autoware_lidar_camera_calibration.yaml"/>
+    <arg name="image_rectifier_out" default="image_rectified"/>
+
+    <node pkg="image_rectifier" type="image_rectifier_node" name="image_rectifier" output="screen">
+        <param name="image_src" value="$(arg image_src)"/>
+        <param name="calibration_file" value="$(arg calibration_file)"/>
+        <param name="image_rectifier_out" value="$(arg image_rectifier_out)"/>
+    </node>
+    
+</launch>
