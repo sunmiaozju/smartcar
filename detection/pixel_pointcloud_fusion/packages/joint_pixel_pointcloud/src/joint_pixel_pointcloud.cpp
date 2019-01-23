@@ -134,7 +134,7 @@ tf::StampedTransform PixelCloudFusion::FindTransform(const std::string &target_f
     tf::StampedTransform transform;
 
     camera_lidar_tf_ok_ = false;
-add 
+    
     try
     {
         // ros::Time(0)指定了时间为0，即获得最新有效的变换。
