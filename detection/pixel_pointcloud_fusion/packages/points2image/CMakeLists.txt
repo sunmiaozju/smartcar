@@ -7,8 +7,6 @@ find_package(catkin REQUIRED COMPONENTS
         std_msgs
         sensor_msgs
         smartcar_msgs
-        rosinterface
-        fastvirtualscan
         cv_bridge
         tf
         pcl_ros
@@ -33,8 +31,6 @@ catkin_package(
         std_msgs
         sensor_msgs
         smartcar_msgs
-        rosinterface
-        fastvirtualscan
         cv_bridge
         tf
         pcl_ros
