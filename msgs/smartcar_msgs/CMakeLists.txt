@@ -5,6 +5,7 @@ project(smartcar_msgs)
 find_package(catkin REQUIRED COMPONENTS
         std_msgs
         geometry_msgs
+        sensor_msgs
         message_generation
         )
 
@@ -17,11 +18,24 @@ add_message_files(
         LaneArray.msg
         PointsImage.msg
         ProjectionMatrix.msg
+        ImageObj.msg
+        ImageObjects.msg
+        ImageObjTracked.msg
+        ImageObjRanged.msg
+        ImageRect.msg
+        ImageRectRanged.msg
+        DetectedObject.msg
+        DetectedObjectArray.msg
+        TrafficLightResult.msg
+        TrafficLight.msg
+        TrafficLightResultArray.msg
+        ImageLaneObjects.msg
 )
 
 generate_messages(
         DEPENDENCIES
         std_msgs
+        sensor_msgs
         geometry_msgs
 )
 
