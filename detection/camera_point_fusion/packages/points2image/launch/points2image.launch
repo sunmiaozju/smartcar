@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="points2image" type="points2image" name="points2image4" output="screen">
+    </node>
+
+</launch>
+
