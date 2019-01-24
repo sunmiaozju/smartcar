@@ -74,37 +74,6 @@ bool NDTLocalization::init()
 #endif
   }
 
-  if(param_init_pose_with_param){
-    init_pose_with_param();
-  }else{
-    sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
-  }
-  while(!load_map(map_file)){
-    if(param_init_pose_with_param){
-      init_pose_with_param();
-    }else{
-      sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
-    }
-    ros::Duration(1.0).sleep();
-  }
-  // sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_map_topic_, 1, boost::bind(&NDTLocalization::mapCB, this, _1));
-  sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_lidar_topic_, 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
-
-  if(param_use_odom_){
-    sub_odom_ = nh_.subscribe<nav_msgs::Odometry>(param_odom_topic_, 500, boost::bind(&NDTLocalization::odomCB, this, _1));
-  }
-  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
-  pub_path = nh_.advertise<nav_msgs::Path>("/debug/history_path",10);
-
-  if(param_debug_){
-    pub_ndt_time = nh_.advertise<std_msgs::Float32>("/ndt_align_time",10);
-    pub_ndt_iterations = nh_.advertise<std_msgs::Int16>("/ndt_iterations",10);
-  }
-
-    pub_marker_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
-    pub_marker_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
-
-
   // set tf_btol and tf_btol.inverse   (base_link -> laser_link)
   tf::StampedTransform transform;
   try
@@ -130,6 +99,35 @@ bool NDTLocalization::init()
 
   // current_map2odom_ = tf::Transform(tf::Quaternion(0., 0., 0.), tf::Vector3(0., 0., 0.));
   // end set tf_btol
+
+  if(param_init_pose_with_param){
+    init_pose_with_param();
+  }else{
+    sub_initial_pose_ = nh_.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, boost::bind(&NDTLocalization::initialPoseCB, this, _1));
+  }
+  while(!load_map(map_file)){
+    if(param_init_pose_with_param){
+      init_pose_with_param();
+    }
+    ros::spinOnce();
+    ros::Duration(1.0).sleep();
+  }
+  // sub_map_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_map_topic_, 1, boost::bind(&NDTLocalization::mapCB, this, _1));
+  sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(param_lidar_topic_, 20, boost::bind(&NDTLocalization::pointCloudCB, this, _1));
+
+  if(param_use_odom_){
+    sub_odom_ = nh_.subscribe<nav_msgs::Odometry>(param_odom_topic_, 500, boost::bind(&NDTLocalization::odomCB, this, _1));
+  }
+  pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
+  pub_path = nh_.advertise<nav_msgs::Path>("/debug/history_path",10);
+
+  if(param_debug_){
+    pub_ndt_time = nh_.advertise<std_msgs::Float32>("/ndt_align_time",10);
+    pub_ndt_iterations = nh_.advertise<std_msgs::Int16>("/ndt_iterations",10);
+  }
+
+    pub_marker_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
+    pub_marker_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
 
   if (param_debug_)
   {
