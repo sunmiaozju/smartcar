@@ -16,6 +16,7 @@
     <build_depend>roscpp</build_depend>
     <build_depend>qtbase5-dev</build_depend>
     <build_depend>tf</build_depend>
+    <build_depend>yunle_sensor_msgs</build_depend>
 
     <exec_depend>cv_bridge</exec_depend>
     <exec_depend>image_transport</exec_depend>
@@ -24,6 +25,7 @@
     <exec_depend>roscpp</exec_depend>
     <exec_depend>libqt5-core</exec_depend>
     <exec_depend>tf</exec_depend>
+    <exec_depend>yunle_sensor_msgs</exec_depend>
 
     <build_depend>qtbase5-dev</build_depend>
     <exec_depend>libqt5-core</exec_depend>
