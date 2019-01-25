@@ -6,7 +6,7 @@
     <arg name="camera_frame" default="camera"/>
     <arg name="projection_matrix_topic" default="/projection_matrix"/>
 
-    <node pkg="calibration" type="calibration_pub_node" name="calibration_publisher">      
+    <node pkg="calibration_publisher" type="calibration_pub_node" name="calibration_publisher">      
         <param name="register_lidar2camera_tf" type="bool" value="true"/>
         <param name="publish_extrinsic_mat" type="bool" value="true"/>
         <param name="publish_camera_info" type="bool" value="true"/>
