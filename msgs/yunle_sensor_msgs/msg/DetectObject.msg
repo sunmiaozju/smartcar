@@ -1,0 +1,12 @@
+float64 score
+int32 category
+int32 xmin
+int32 ymin
+int32 xmax
+int32 ymax
+int32 ymin_3d
+int32 xmin_3d
+int32 ymax_3d
+int32 xmax_3d
+float64 obj_deg
+float64 obj_dist
