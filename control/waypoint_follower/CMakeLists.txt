@@ -31,8 +31,23 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(pure_persuit nodes/pure_persuit/pure_persuit.cpp)
-#add_dependencies(pure_persuit smartcar_msgs smartcar_config_msgs)
-target_link_libraries(pure_persuit ${catkin_LIBRARIES})
-add_dependencies(pure_persuit ${catkin_EXPORTED_TARGETS})
+add_library(pure_persuit_lib SHARED
+            nodes/pure_persuit/pure_persuit.cpp 
+            nodes/pure_persuit/pure_persuit.h)
+target_link_libraries(pure_persuit_lib 
+                      ${catkin_LIBRARIES})
+target_include_directories(pure_persuit_lib PRIVATE       
+                          ${catkin_INCLUDE_DIRS})
+add_dependencies(pure_persuit_lib
+                 ${catkin_EXPORTED_TARGETS})
+
+
+add_executable(pure_persuit_node 
+               nodes/pure_persuit/pure_persuit_node.cpp)
+target_link_libraries(pure_persuit_node
+                     ${catkin_LIBRARIES})
+target_include_directories(pure_persuit_node PRIVATE
+                           ${catkin_INCLUDE_DIRS})
+add_dependencies(pure_persuit_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(pure_persuit_node pure_persuit_lib)
 

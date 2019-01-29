@@ -1,7 +1,7 @@
 <!-- -->
 <launch>
 
-    <arg name="is_linear_interpolation" default="True"/>
+    <arg name="is_linear_interpolation" default="False"/>
     <arg name="wheel_base" default="0.5"/>
     <arg name="lookahead_distance_ratio" default="4"/>
     <arg name="minimum_lookahead_distance_" default="2.5"/>

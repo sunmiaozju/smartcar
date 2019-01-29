@@ -6,31 +6,19 @@
 
 namespace waypoint_follower
 {
-static float count;
 // Constructor
 PurePursuitNode::PurePursuitNode() : private_nh_("~"),
                                      LOOP_RATE_(1),
+                                     curvature_MIN_(1 / 9e10),
                                      is_waypoint_set_(false),
                                      is_pose_set_(false),
-                                     is_velocity_set_(false),
                                      current_linear_velocity_(0),
                                      command_linear_velocity_(0),
-                                     CONST_VEL_DIS(true),
-                                     const_lookahead_distance_(4.0),
-                                     const_velocity_(5.0),
-                                     lookahead_distance_ratio_(2.0),
-                                     RADIUS_MAX_(9e10),
-                                     curvature_MIN_(1 / RADIUS_MAX_),
-                                     is_linear_interpolation_(false),
                                      next_waypoint_number_(-1),
-                                     lookahead_distance_(0),
-                                     minimum_lookahead_distance_(6.0)
+                                     lookahead_distance_(0)
 {
     // 设置了订阅，发布的话题消息， 读取了launch文件中的配置变量
     initForROS();
-
-    // initialize for PurePursuit
-    setLinearInterpolationParameter(is_linear_interpolation_); //true
 }
 
 // Destructor
@@ -41,184 +29,130 @@ PurePursuitNode::~PurePursuitNode()
 void PurePursuitNode::initForROS()
 {
     // ros parameter settings
-    private_nh_.param("is_linear_interpolation", is_linear_interpolation_, bool(true));
+    private_nh_.param("is_linear_interpolation", is_linear_interpolation_, bool(false));
     private_nh_.param("wheel_base", wheel_base_, double(0.5));
-    private_nh_.param("lookahead_distance_ratio", lookahead_distance_ratio_,double(4.0)); //假设速度的单位是m/s, 1M/S的预瞄距离是4m
+    private_nh_.param("lookahead_distance_ratio", lookahead_distance_ratio_, double(4.0)); //假设速度的单位是m/s, 1M/S的预瞄距离是4m
     private_nh_.param("minimum_lookahead_distance_", minimum_lookahead_distance_, double(2.5));
     private_nh_.param("const_lookahead_distance_", const_lookahead_distance_, double(4));
     private_nh_.param("const_velocity_", const_velocity_, double(1)); //1m/s
-    private_nh_.param("is_const_vel_dis_", is_const_vel_dis_, true);
+    private_nh_.param("is_const_lookahead_dis", is_const_lookahead_dis_, true);
+    private_nh_.param("is_const_speed_command_", is_const_speed_command_, true);
 
     // setup subscriber
-    sub1_ = nh_.subscribe("lane_array", 10, &PurePursuitNode::callbackFromWayPoints, this);
-    sub2_ = nh_.subscribe("current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
-    sub4_ = nh_.subscribe("hall_speed", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
+    sub_lane = nh_.subscribe("lane_array", 10, &PurePursuitNode::callbackFromWayPoints, this);
+    sub_currentpose = nh_.subscribe("current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
+    sub_speed = nh_.subscribe("hall_speedi", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
 
     // setup publisher
-    pub = nh_.advertise<geometry_msgs::TwistStamped>("ctrl_cmd", 10);
-    //pub11_ = nh_.advertise<visualization_msgs::Marker>("next_waypoint_mark", 0);
-    //pub12_ = nh_.advertise<visualization_msgs::Marker>("next_target_mark", 0);
-    //pub13_ = nh_.advertise<visualization_msgs::Marker>("search_circle_mark", 0);
-    //pub14_ = nh_.advertise<visualization_msgs::Marker>("line_point_mark", 0); // debug tool
-    //pub15_ = nh_.advertise<visualization_msgs::Marker>("trajectory_circle_mark", 0);
-    //pub16_ = nh_.advertise<std_msgs::Float32>("angular_gravity", 0);
-    //pub17_ = nh_.advertise<std_msgs::Float32>("deviation_of_current_position", 0);
-    // pub7_ = nh.advertise<std_msgs::Bool>("wf_stat", 0);
+    pub_ctl = nh_.advertise<geometry_msgs::TwistStamped>("ctrl_cmd", 10);
+    pub_target = nh_.advertise<visualization_msgs::Marker>("next_target_mark", 0);
 }
 
 void PurePursuitNode::run()
 {
-    ROS_INFO_STREAM("pure pursuit start");
+    // ROS_INFO_STREAM("pure pursuit start");
     ros::Rate loop_rate(LOOP_RATE_);
     while (ros::ok())
     {
         ros::spinOnce();
-        // 如果信息没有准备好，不执行pure persuit算法，
-        // 信息准备好之后，相应的flag会被置1, 执行一遍pure persuit算法之后，pose，路点，速度的标志位要重置
-        if (!is_pose_set_ || !is_waypoint_set_ || !is_velocity_set_)
+        if (!is_pose_set_ || !is_waypoint_set_)
         {
             // ROS_WARN("Necessary topics are not subscribed yet ... ");
             loop_rate.sleep();
+            return;
         }
         // 将前视距离与速度关联起来，速度越快，前视觉距离越远
-        // 通过速度乘系数得到的前视距离不小于最小前视距离，不大于当前速度×10
-        setLookaheadDistance(computeLookaheadDistance());
-        // 最小前视距离通过参数配置回调函数给出，前视距离与当前速度的比例也跟据配置回调函数给出
-        setMinimumLookaheadDistance(minimum_lookahead_distance_);
+        lookahead_distance_ = computeLookaheadDistance();
 
         double curvature = 0;
-        // 传进去的参数是地址，带着计算的曲率回来
-        bool can_get_curvature = canGetCurvature(&curvature);
+        bool can_get_curvature = computeCurvature(&curvature);
         publishControlCommandStamped(can_get_curvature, curvature);
 
         // for visualization with Rviz
-        // pub11_.publish(displayNextWaypoint(getPoseOfNextWaypoint()));
-        // pub13_.publish(displaySearchRadius(getCurrentPose().position, getLookaheadDistance()));
-        // pub12_.publish(displayNextTarget(getPoseOfNextTarget()));
-        // pub15_.publish(displayTrajectoryCircle(
-        //         waypoint_follower::generateTrajectoryCircle(getPoseOfNextTarget(), getCurrentPose())));
-        // std_msgs::Float32 angular_gravity_msg;
-        // angular_gravity_msg.data = computeAngularGravity(computeCommandVelocity(), curvature);
-        // pub16_.publish(angular_gravity_msg);
-
-        // publishDeviationCurrentPosition(getCurrentPose().position, getCurrentWaypoints());
+        // TDDO
 
         is_pose_set_ = false;
-        is_velocity_set_ = false;
         is_waypoint_set_ = false;
-
         loop_rate.sleep();
     }
 }
 
-void PurePursuitNode::publishControlCommandStamped(const bool &can_get_curvature, const double &curvature) const
+bool PurePursuitNode::computeCurvature(double *output_curvature)
 {
-    geometry_msgs::TwistStamped control_msg;
-    control_msg.header.stamp = ros::Time::now();
-    control_msg.twist.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
-    control_msg.twist.angular.z = can_get_curvature ? convertCurvatureToSteeringAngle(wheel_base_, curvature) : 0;
-    pub.publish(control_msg);
-}
-
-double PurePursuitNode::computeLookaheadDistance() const
-{
-    if (is_const_vel_dis_ == CONST_VEL_DIS)
-        return const_lookahead_distance_;
-
-    double maximum_lookahead_distance = current_linear_velocity_ * 10;
-    double ld = current_linear_velocity_ * lookahead_distance_ratio_;
-
-    return ld < minimum_lookahead_distance_ ? minimum_lookahead_distance_ : ld > maximum_lookahead_distance ? maximum_lookahead_distance : ld;
-}
-
-double PurePursuitNode::computeCommandVelocity() const
-{
-    if (is_const_vel_dis_ == CONST_VEL_DIS)
-        return const_velocity_;
-
-    return command_linear_velocity_;
-}
-
-double PurePursuitNode::computeAngularGravity(double velocity, double curvature) const
-{
-    const double gravity = 9.80665;
-    return (velocity * velocity) / (1.0 / curvature * gravity);
-}
-
-void PurePursuitNode::publishDeviationCurrentPosition(const geometry_msgs::Point &point,
-                                                      const std::vector<smartcar_msgs::Waypoint> &waypoints) const
-{
-    // Calculate the deviation of current position from the waypoint approximate line
-
-    if (waypoints.size() < 3)
+    // search next waypoint
+    // 获取了大于前视距离的最邻近点，保存在了next_waypoint_number_
+    // 如果没有可以用于跟踪的目标路径点,那么会返回-1
+    getNextWaypoint();
+    if (next_waypoint_number_ == -1)
     {
+        ROS_INFO("lost next waypoint");
+        return false;
+    }
+
+    // if is_linear_interpolation_ is false or next waypoint is first or last
+    if (!is_linear_interpolation_ || next_waypoint_number_ == 0 ||
+        next_waypoint_number_ == (static_cast<int>(current_waypoints_.size() - 1)))
+    {
+        next_target_position_ = current_waypoints_.at(next_waypoint_number_).pose.pose.position;
+        *output_curvature = calcCurvature(next_target_position_);
+        return true;
+    }
+
+    // linear interpolation and calculate angular velocity
+    bool interpolation = interpolateNextTarget(next_waypoint_number_, &next_target_position_);
+    if (!interpolation)
+    {
+        ROS_INFO_STREAM("lost target! ");
+        return false;
+    }
+    *output_curvature = calcCurvature(next_target_position_);
+    return true;
+}
+
+void PurePursuitNode::getNextWaypoint()
+{
+    int path_size = static_cast<int>(current_waypoints_.size());
+    static double pre_index = -1;
+    static int search_start_index = 0;
+
+    // if waypoints are not given, do nothing.
+    if (path_size == 0)
+    {
+        next_waypoint_number_ = -1;
         return;
     }
 
-    double a, b, c;
-    double linear_flag_in =
-        getLinearEquation(waypoints.at(2).pose.pose.position, waypoints.at(1).pose.pose.position, &a, &b, &c);
-
-    std_msgs::Float32 msg;
-    msg.data = getDistanceBetweenLineAndPoint(point, a, b, c);
-
-    pub17_.publish(msg);
-}
-
-void PurePursuitNode::callbackFromCurrentPose(const geometry_msgs::PoseStampedConstPtr &msg)
-{
-    // 读取了当前的车辆pose消息，里面有xyz和四元数
-    setCurrentPose(msg);
-    is_pose_set_ = true;
-}
-
-void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr &msg)
-{
-    current_linear_velocity_ = msg->twist.linear.x;
-    is_velocity_set_ = true;
-}
-
-void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr &msg)
-{
-    // 从way_ponits里面读取目标速度
-    if (msg->lanes.at(0).waypoints.at(0).twist.twist.linear.x != 0)
-        command_linear_velocity_ = msg->lanes.at(0).waypoints.at(0).twist.twist.linear.x;
-    else
-        command_linear_velocity_ = 1; //  1m/s
-
-    // 从消息中保存下载way_points
-    setCurrentWaypoints(msg->lanes[0].waypoints);
-    is_waypoint_set_ = true;
-}
-
-double convertCurvatureToSteeringAngle(const double &wheel_base, const double &curvature)
-{
-    return atan(wheel_base * curvature);
-}
-
-// 计算曲率
-// 曲率 = 2 * el / ld^2  el是当前位置和目标预瞄点的横向误差
-double PurePursuitNode::calcCurvature(geometry_msgs::Point target) const
-{
-    double curvature;
-    double denominator = pow(getPlaneDistance(target, current_pose_.position), 2);
-    double numerator = 2 * calcRelativeCoordinate(target, current_pose_).y;
-
-    if (denominator != 0)
-        curvature = numerator / denominator;
-    else
+    // look for the next waypoint.
+    for (int i = search_start_index; i < path_size; i++)
     {
-        if (numerator > 0)
-            curvature = curvature_MIN_;
-        else
-            curvature = -curvature_MIN_;
+        // if search waypoint is the last
+        if (i == (path_size - 1))
+        {
+            ROS_INFO("search waypoint is the last");
+            next_waypoint_number_ = i;
+            return;
+        }
+
+        // if there exists an effective waypoint
+        // getPlaneDistances()函数是获得水平距离，不计算z轴的数据
+        // 如果计算的距离小于前视距离，那么就计算下一个点
+        // 如果找完所有的点都没有大于前视距离的点了，那么就选取最后一个点
+        double dis = getPlaneDistance(current_waypoints_.at(i).pose.pose.position, current_pose_.position);
+        if ((dis > lookahead_distance_) && (pre_index <= i))
+        {
+            next_waypoint_number_ = i;
+            search_start_index = (i - 10 > 0) ? (i - 10) : 0;
+            pre_index = i;
+            return;
+        }
     }
-    // ROS_INFO("curvature : %lf", curvature);
-    return curvature;
+    // if this program reaches here , it means we lost the waypoint!
+    next_waypoint_number_ = -1;
+    return;
 }
 
 // linear interpolation of next target
-bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Point *next_target) const
+bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Point *next_target)
 {
     const double ERROR = pow(10, -5); // 0.00001
 
@@ -245,10 +179,10 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
 
     // let the center of circle be "(x0,y0)", in my code , the center of circle is vehicle position
     // the distance  "d" between the foot of a perpendicular line and the center of circle is ...
+    // distance between target 1 and target2 in 2-D
     //    | a * x0 + b * y0 + c |
     // d = -------------------------------
     //          √( a~2 + b~2)
-    // 外国人数学说的真不明白
     // 这一步就是计算当前位置到前面拟合出来的直线的“点到直线的距离”
     double d = getDistanceBetweenLineAndPoint(current_pose_.position, a, b, c);
 
@@ -256,7 +190,6 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
     // ROS_INFO("b : %lf ", b);
     // ROS_INFO("c : %lf ", c);
     // ROS_INFO("distance : %lf ", d);
-
     if (d > search_radius)
         return false;
 
@@ -356,108 +289,144 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
     }
 }
 
-void PurePursuitNode::getNextWaypoint()
+double PurePursuitNode::calcCurvature(geometry_msgs::Point target)
 {
-    int path_size = static_cast<int>(current_waypoints_.size());
+    // 计算曲率
+    // 曲率 = 2 * el / ld^2  el是当前位置和目标预瞄点的横向误差
+    double curvature;
+    double denominator = pow(getPlaneDistance(target, current_pose_.position), 2);
+    double numerator = -2 * calcRelativeCoordinate(target, current_pose_).y;
 
-    // if waypoints are not given, do nothing.
-    if (path_size == 0)
+    if (denominator != 0)
+        curvature = numerator / denominator;
+    else
     {
-        next_waypoint_number_ = -1;
-        return;
+        if (numerator > 0)
+            curvature = curvature_MIN_;
+        else
+            curvature = -curvature_MIN_;
     }
-
-    // look for the next waypoint.
-    for (int i = 0; i < path_size; i++)
-    {
-        // if search waypoint is the last
-        if (i == (path_size - 1))
-        {
-            ROS_INFO("search waypoint is the last");
-            next_waypoint_number_ = i;
-            return;
-        }
-
-        // if there exists an effective waypoint
-        // getPlaneDistances()函数是获得水平距离，不计算z轴的数据
-        // 如果计算的距离小于前视距离，那么就计算下一个点
-        // 如果找完所有的点都没有大于前视距离的点了，那么就选取最后一个点
-        // TODO
-        // 不过这个查找每次都要遍历所有的way_point，之后看看能不能修改修改
-        if (getPlaneDistance(current_waypoints_.at(i).pose.pose.position, current_pose_.position) >
-            lookahead_distance_)
-        {
-            next_waypoint_number_ = i;
-            return;
-        }
-    }
-
-    // if this program reaches here , it means we lost the waypoint!
-    next_waypoint_number_ = -1;
-    return;
+    return curvature;
 }
 
-bool PurePursuitNode::canGetCurvature(double *output_curvature)
+void PurePursuitNode::publishControlCommandStamped(const bool &can_get_curvature, const double &curvature) const
 {
-    // search next waypoint
-    // 获取了大于前视距离的最邻近点，保存在了next_waypoint_number_
-    // 如果没有可以用于跟踪的目标路径点,那么会返回-1
-    getNextWaypoint();
-    if (next_waypoint_number_ == -1)
+    geometry_msgs::TwistStamped control_msg;
+    control_msg.header.stamp = ros::Time::now();
+    control_msg.twist.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
+    control_msg.twist.angular.z = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
+    pub_ctl.publish(control_msg);
+}
+
+double PurePursuitNode::computeLookaheadDistance() const
+{
+    if (is_const_lookahead_dis_ == true)
+        return const_lookahead_distance_;
+    // 通过速度乘系数得到的前视距离不小于最小前视距离，不大于当前速度×10
+    double maximum_lookahead_distance = current_linear_velocity_ * 10;
+    double ld = current_linear_velocity_ * lookahead_distance_ratio_;
+    return ld < minimum_lookahead_distance_ ? minimum_lookahead_distance_ : ld > maximum_lookahead_distance ? maximum_lookahead_distance : ld;
+}
+
+double PurePursuitNode::computeCommandVelocity() const
+{
+    if (is_const_speed_command_ == true)
+        return const_velocity_;
+
+    return command_linear_velocity_;
+}
+
+void PurePursuitNode::callbackFromCurrentPose(const geometry_msgs::PoseStampedConstPtr &msg)
+{
+    // 读取了当前的车辆pose消息，里面有xyz和四元数
+    current_pose_ = msg->pose;
+    is_pose_set_ = true;
+}
+
+void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr &msg)
+{
+    current_linear_velocity_ = msg->twist.linear.x;
+}
+
+void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr &msg)
+{
+    // 从way_ponits里面读取目标速度
+    if (msg->lanes[0].waypoints[0].twist.twist.linear.x != 0)
+        command_linear_velocity_ = msg->lanes[0].waypoints[0].twist.twist.linear.x;
+    else
+        command_linear_velocity_ = 1; //  1m/s
+
+    // 从消息中保存下载way_points
+    current_waypoints_ = msg->lanes[0].waypoints;
+    is_waypoint_set_ = true;
+}
+
+geometry_msgs::Point PurePursuitNode::calcRelativeCoordinate(geometry_msgs::Point point_msg, geometry_msgs::Pose current_pose)
+{
+    // calculation relative coordinate of point from current_pose frame
+    tf::Transform inverse;
+    tf::poseMsgToTF(current_pose, inverse);
+    tf::Transform transform = inverse.inverse();
+
+    tf::Point p;
+    pointMsgToTF(point_msg, p);
+    tf::Point tf_p = transform * p;
+    geometry_msgs::Point tf_point_msg;
+    pointTFToMsg(tf_p, tf_point_msg);
+
+    return tf_point_msg;
+}
+
+double PurePursuitNode::getPlaneDistance(geometry_msgs::Point target1, geometry_msgs::Point target2)
+{
+    // distance between target 1 and target2 in 2-D
+    tf::Vector3 v1 = point2vector(target1);
+    v1.setZ(0);
+    tf::Vector3 v2 = point2vector(target2);
+    v2.setZ(0);
+    return tf::tfDistance(v1, v2);
+}
+
+double PurePursuitNode::getDistanceBetweenLineAndPoint(geometry_msgs::Point point, double a, double b, double c)
+{
+    double d = fabs(a * point.x + b * point.y + c) / sqrt(pow(a, 2) + pow(b, 2));
+
+    return d;
+}
+
+tf::Vector3 PurePursuitNode::rotateUnitVector(tf::Vector3 unit_vector, double degree)
+{
+    tf::Vector3
+        w1(cos(deg2rad(degree)) * unit_vector.getX() - sin(deg2rad(degree)) * unit_vector.getY(),
+           sin(deg2rad(degree)) * unit_vector.getX() + cos(deg2rad(degree)) * unit_vector.getY(), 0);
+    tf::Vector3 unit_w1 = w1.normalize();
+    return unit_w1;
+}
+
+tf::Vector3 PurePursuitNode::point2vector(geometry_msgs::Point point)
+{
+    tf::Vector3 vector(point.x, point.y, point.z);
+    return vector;
+}
+
+bool PurePursuitNode::getLinearEquation(geometry_msgs::Point start, geometry_msgs::Point end, double *a, double *b, double *c)
+{
+    //(x1, y1) = (start.x, star.y), (x2, y2) = (end.x, end.y)
+    double sub_x = fabs(start.x - end.x);
+    double sub_y = fabs(start.y - end.y);
+    double error = pow(10, -5); // 0.00001
+
+    if (sub_x < error && sub_y < error)
     {
-        ROS_INFO("lost next waypoint");
+        ROS_INFO("two points are the same point!!");
         return false;
     }
-    // check whether curvature is valid or not
-    // 下面处理的作用是，确定当前的路点集是不是有效的
-    // 如果当前的路点集中所有的点都小于前视距离的最小值，那么就说明这个路点集是无效的
-    // 如果路点集中只要有一个点大于前视距离的最小值，那么这个路点集就是有效的
-    bool is_valid_curve = false;
-    // C++11 的for新写法，类似于python的for循环
-    // ：前面是取出的变量，：后面是迭代器
-    for (const smartcar_msgs::Waypoint &el : current_waypoints_)
-    {
-        if (getPlaneDistance(el.pose.pose.position, current_pose_.position) > minimum_lookahead_distance_)
-        {
-            is_valid_curve = true;
-            break;
-        }
-    }
 
-    if (!is_valid_curve)
-    {
-        return false;
-    }
+    *a = end.y - start.y;
+    *b = (-1) * (end.x - start.x);
+    *c = (-1) * (end.y - start.y) * start.x + (end.x - start.x) * start.y;
 
-    // if is_linear_interpolation_ is false or next waypoint is first or last
-    if (!is_linear_interpolation_ || next_waypoint_number_ == 0 ||
-        next_waypoint_number_ == (static_cast<int>(current_waypoints_.size() - 1)))
-    {
-        next_target_position_ = current_waypoints_.at(next_waypoint_number_).pose.pose.position;
-        *output_curvature = calcCurvature(next_target_position_);
-        return true;
-    }
-
-    // linear interpolation and calculate angular velocity
-    bool interpolation = interpolateNextTarget(next_waypoint_number_, &next_target_position_);
-
-    if (!interpolation)
-    {
-        ROS_INFO_STREAM("lost target! ");
-        return false;
-    }
-
-    // ROS_INFO("next_target : ( %lf , %lf , %lf)", next_target.x, next_target.y,next_target.z);
-
-    *output_curvature = calcCurvature(next_target_position_);
     return true;
 }
 
 } // namespace waypoint_follower
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "pure_pursuit");
-    waypoint_follower::PurePursuitNode ppn;
-    ppn.run();
-    return 0;
-}
