@@ -8,7 +8,7 @@ namespace waypoint_follower
 {
 // Constructor
 PurePursuitNode::PurePursuitNode() : private_nh_("~"),
-                                     LOOP_RATE_(1),
+                                     LOOP_RATE_(10),
                                      curvature_MIN_(1 / 9e10),
                                      is_waypoint_set_(false),
                                      is_pose_set_(false),
@@ -41,11 +41,13 @@ void PurePursuitNode::initForROS()
     // setup subscriber
     sub_lane = nh_.subscribe("lane_array", 10, &PurePursuitNode::callbackFromWayPoints, this);
     sub_currentpose = nh_.subscribe("current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
-    sub_speed = nh_.subscribe("hall_speedi", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
+    sub_speed = nh_.subscribe("ndt_speed", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
 
     // setup publisher
     pub_ctl = nh_.advertise<geometry_msgs::TwistStamped>("ctrl_cmd", 10);
-    pub_target = nh_.advertise<visualization_msgs::Marker>("next_target_mark", 0);
+    pub_target = nh_.advertise<visualization_msgs::MarkerArray>("target_waypoint", 10);
+    pub_path = nh_.advertise<nav_msgs::Path>("followed_path", 10);
+    pub_car_model = nh_.advertise<visualization_msgs::Marker>("car_model", 10);
 }
 
 void PurePursuitNode::run()
@@ -59,7 +61,7 @@ void PurePursuitNode::run()
         {
             // ROS_WARN("Necessary topics are not subscribed yet ... ");
             loop_rate.sleep();
-            return;
+            continue;
         }
         // 将前视距离与速度关联起来，速度越快，前视觉距离越远
         lookahead_distance_ = computeLookaheadDistance();
@@ -69,11 +71,10 @@ void PurePursuitNode::run()
         publishControlCommandStamped(can_get_curvature, curvature);
 
         // for visualization with Rviz
-        // TDDO
+        visualInRviz();
 
         is_pose_set_ = false;
         is_waypoint_set_ = false;
-        loop_rate.sleep();
     }
 }
 
@@ -112,8 +113,11 @@ bool PurePursuitNode::computeCurvature(double *output_curvature)
 void PurePursuitNode::getNextWaypoint()
 {
     int path_size = static_cast<int>(current_waypoints_.size());
-    static double pre_index = -1;
+    static int pre_index = -1;
     static int search_start_index = 0;
+    static int clearest_points_index = -1;
+    bool is_find_clearest_point = false;
+    static float search_radius = 2;
 
     // if waypoints are not given, do nothing.
     if (path_size == 0)
@@ -121,32 +125,48 @@ void PurePursuitNode::getNextWaypoint()
         next_waypoint_number_ = -1;
         return;
     }
-
-    // look for the next waypoint.
-    for (int i = search_start_index; i < path_size; i++)
+    while (1)
     {
-        // if search waypoint is the last
-        if (i == (path_size - 1))
+        // look for the next waypoint.
+        for (int i = search_start_index; i < path_size; i++)
         {
-            ROS_INFO("search waypoint is the last");
-            next_waypoint_number_ = i;
-            return;
-        }
+            // if there exists an effective waypoint
+            // getPlaneDistances()函数是获得水平距离，不计算z轴的数据
+            // 如果计算的距离小于前视距离，那么就计算下一个点
+            // 如果找完所有的点都没有大于前视距离的点了，那么就选取最后一个点
+            double dis = getPlaneDistance(current_waypoints_.at(i).pose.pose.position, current_pose_.position);
 
-        // if there exists an effective waypoint
-        // getPlaneDistances()函数是获得水平距离，不计算z轴的数据
-        // 如果计算的距离小于前视距离，那么就计算下一个点
-        // 如果找完所有的点都没有大于前视距离的点了，那么就选取最后一个点
-        double dis = getPlaneDistance(current_waypoints_.at(i).pose.pose.position, current_pose_.position);
-        if ((dis > lookahead_distance_) && (pre_index <= i))
-        {
-            next_waypoint_number_ = i;
-            search_start_index = (i - 10 > 0) ? (i - 10) : 0;
-            pre_index = i;
-            return;
+            if (dis < search_radius)
+            {
+                std::cout << "----------" << std::endl;
+                clearest_points_index = i;
+                is_find_clearest_point = true;
+                if (search_radius > 2)
+                    search_radius -= 0.5;
+            }
+
+            if ((dis > lookahead_distance_) && (pre_index <= i) && (clearest_points_index <= i))
+            {
+                next_waypoint_number_ = i;
+                search_start_index = (i - 15 > 0) ? (i - 15) : 0;
+                pre_index = i;
+                if (is_find_clearest_point)
+                {
+                    is_find_clearest_point = false;
+                    return;
+                }
+            }
         }
+        // the car is away the following path too far
+        search_radius += 1;
+        clearest_points_index = -1;
+        search_start_index = 0;
+        is_find_clearest_point = false;
+        pre_index = -1;
+        std::cout << search_radius << std::endl;
     }
     // if this program reaches here , it means we lost the waypoint!
+
     next_waypoint_number_ = -1;
     return;
 }
@@ -429,4 +449,77 @@ bool PurePursuitNode::getLinearEquation(geometry_msgs::Point start, geometry_msg
     return true;
 }
 
+void PurePursuitNode::visualInRviz()
+{
+    nav_msgs::Path msg_path;
+    visualization_msgs::MarkerArray msg_marker_array;
+    for (size_t i = 0; i < current_waypoints_.size(); i++)
+    {
+        // visual global path in rviz
+        geometry_msgs::PoseStamped msg_pose;
+        msg_path.header.stamp = ros::Time();
+        msg_path.header.frame_id = "/map";
+        msg_pose.pose = current_waypoints_[i].pose.pose;
+        msg_path.poses.push_back(msg_pose);
+
+        // visual waypoint pose in rviz
+        visualization_msgs::Marker msg_arrow_marker;
+        msg_arrow_marker.header.frame_id = "/map";
+        msg_arrow_marker.header.stamp = ros::Time();
+        msg_arrow_marker.ns = "target_waypoint";
+        msg_arrow_marker.id = i;
+        msg_arrow_marker.type = visualization_msgs::Marker::ARROW;
+        msg_arrow_marker.action = visualization_msgs::Marker::ADD;
+        msg_arrow_marker.pose = current_waypoints_[i].pose.pose;
+        if (int(i) == next_waypoint_number_)
+        {
+            msg_arrow_marker.color.r = 1.0;
+            msg_arrow_marker.color.g = 0.0;
+            msg_arrow_marker.color.b = 0.0;
+            msg_arrow_marker.scale.x = 0.9;
+            msg_arrow_marker.scale.y = 0.15;
+            msg_arrow_marker.scale.z = 0.15;
+        }
+        else
+        {
+            msg_arrow_marker.color.r = 0.0;
+            msg_arrow_marker.color.g = 1.0;
+            msg_arrow_marker.color.b = 0.0;
+            msg_arrow_marker.scale.x = 0.7;
+            msg_arrow_marker.scale.y = 0.05;
+            msg_arrow_marker.scale.z = 0.05;
+        }
+        msg_arrow_marker.color.a = 1.0; // Don't forget to set the alpha!
+        msg_marker_array.markers.push_back(msg_arrow_marker);
+    }
+    pub_path.publish(msg_path);
+    pub_target.publish(msg_marker_array);
+
+    // visual car model
+    visualization_msgs::Marker msg_car_marker;
+    msg_car_marker.header.frame_id = "/map";
+    msg_car_marker.header.stamp = ros::Time();
+    msg_car_marker.ns = "car";
+    msg_car_marker.id = 0;
+    msg_car_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+    msg_car_marker.action = visualization_msgs::Marker::ADD;
+    double current_roll, current_yaw, current_pitch;
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(current_waypoints_[next_waypoint_number_ - 4].pose.pose.orientation, quat);
+    tf::Matrix3x3(quat).getRPY(current_roll, current_pitch, current_yaw);
+    msg_car_marker.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(90 * (M_PI / 180.0),
+                                                                              0 * (M_PI / 180.0),
+                                                                              current_yaw + M_PI / 2.0);
+    msg_car_marker.pose.position = current_pose_.position;
+    msg_car_marker.color.r = 0.7;
+    msg_car_marker.color.g = 0.7;
+    msg_car_marker.color.b = 0.7;
+    msg_car_marker.color.a = 1; // Don't forget to set the alpha!
+    msg_car_marker.scale.x = 0.6;
+    msg_car_marker.scale.y = 0.6;
+    msg_car_marker.scale.z = 0.6;
+    msg_car_marker.mesh_use_embedded_materials = true;
+    msg_car_marker.mesh_resource = "package://car_model/car.dae";
+    pub_car_model.publish(msg_car_marker);
+}
 } // namespace waypoint_follower

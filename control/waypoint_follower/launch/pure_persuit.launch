@@ -10,7 +10,7 @@
     <arg name="is_const_vel_dis_" default="true"/>
 
     <!-- rosrun waypoint_follower pure_pursuit -->
-    <node pkg="waypoint_follower" type="pure_persuit" name="pure_pursuit" output="screen" >
+    <node pkg="waypoint_follower" type="pure_persuit_node" name="pure_pursuit" output="screen" >
         <param name="is_linear_interpolation" value="$(arg is_linear_interpolation)"/>
         <param name="wheel_base" value="$(arg wheel_base)"/>
         <param name="lookahead_distance_ratio" value="$(arg lookahead_distance_ratio)"/>
@@ -19,5 +19,4 @@
         <param name="const_velocity_" value="$(arg const_velocity_)"/>
         <param name="is_const_vel_dis_" value="$(arg is_const_vel_dis_)"/>
     </node>
-
 </launch>

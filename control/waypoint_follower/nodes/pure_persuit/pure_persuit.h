@@ -5,17 +5,18 @@
 #include <ros/ros.h>
 #include <std_msgs/Float32.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <nav_msgs/Path.h>
 
 // User defined includes
 #include "smartcar_msgs/Lane.h"
 #include "smartcar_msgs/LaneArray.h"
 #include "smartcar_config_msgs/ConfigWaypointFollower.h"
 #include "smartcar_msgs/ControlCommandStamped.h"
-//#include "pure_pursuit_viz.h"
 
 namespace waypoint_follower
 {
@@ -28,7 +29,7 @@ class PurePursuitNode
 
     // publisher
     ros::Publisher pub_ctl, pub_target;
-
+    ros::Publisher pub_path, pub_car_model;
     // subscriber
     ros::Subscriber sub_currentpose, sub_lane, sub_speed;
 
@@ -73,6 +74,8 @@ class PurePursuitNode
     void initForROS();
 
     // functions
+    void visualInRviz();
+
     bool computeCurvature(double *output_curvature);
 
     double calcCurvature(geometry_msgs::Point target);
