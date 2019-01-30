@@ -138,7 +138,6 @@ void PurePursuitNode::getNextWaypoint()
 
             if (dis < search_radius)
             {
-                std::cout << "----------" << std::endl;
                 clearest_points_index = i;
                 is_find_clearest_point = true;
                 if (search_radius > 2)
@@ -163,7 +162,6 @@ void PurePursuitNode::getNextWaypoint()
         search_start_index = 0;
         is_find_clearest_point = false;
         pre_index = -1;
-        std::cout << search_radius << std::endl;
     }
     // if this program reaches here , it means we lost the waypoint!
 
