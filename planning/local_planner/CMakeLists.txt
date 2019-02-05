@@ -11,6 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     smartcar_msgs
     sensor_msgs
+    op_planner
+    op_utility
+    vector_map_msgs
     tf
 )
 
@@ -22,6 +25,8 @@ catkin_package(
         std_msgs
         smartcar_msgs
         geometry_msgs
+        op_planner
+        op_utility
 )
 
 include_directories(
@@ -29,8 +34,8 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
 )
 
-add_executable( rollout_generator_node 
-                nodes/rollout_generator/rollout_generator_node.cpp
-                include/rollout_generator/rollout_generator.h)
+add_executable(rollout_generator_node 
+               nodes/rollout_generator/rollout_generator_node.cpp
+               nodes/rollout_generator/rollout_generator.cpp)
 target_link_libraries(rollout_generator_node ${catkin_LIBRARIES})
 
