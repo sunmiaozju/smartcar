@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @Date: 2019-02-03 11:02:36
+ * @LastEditors: sunm
+ * @LastEditTime: 2019-02-05 13:59:27
+ */
 
 /// \file RoadNetwork.h
 /// \brief Definition of OpenPlanner's data types

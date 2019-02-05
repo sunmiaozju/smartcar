@@ -1,18 +1,17 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
     <name>op_utility</name>
     <version>1.9.1</version>
     <description>The libopenplanner_utility package</description>
     <maintainer email="yusuke.fujii@tier4.jp">Yusuke FUJII</maintainer>
     <author email="hatem.darweesh@g.sp.m.is.nagoya-u.ac.jp">Hatem Darweesh</author>
     <license>BSD</license>
-    <buildtool_depend>autoware_build_flags</buildtool_depend>
     <buildtool_depend>catkin</buildtool_depend>
     <build_depend>vector_map_msgs</build_depend>
     <build_depend>vector_map_server</build_depend>
     <build_depend>tinyxml</build_depend>
     
-    <run_depend>tinyxml</run_depend>
-    <run_depend>vector_map_msgs</run_depend>
-     <run_depend>vector_map_server</run_depend>
+    <exec_depend>tinyxml</exec_depend>
+    <exec_depend>vector_map_msgs</exec_depend>
+    <exec_depend>vector_map_server</exec_depend>
 </package>
