@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @Date: 2019-02-03 11:02:36
+ * @LastEditors: sunm
+ * @LastEditTime: 2019-02-14 17:28:08
+ */
 /// \file PlannerH.cpp
 /// \brief Main functions for path generation (global and local)
 /// \author Hatem Darweesh
