@@ -1,0 +1,50 @@
+<launch>
+	<!-- Trajectory Generation Specific Parameters -->
+	<arg name="samplingTipMargin" 		default="4"  /> 
+	<arg name="samplingOutMargin" 		default="16" /> 
+	<arg name="samplingSpeedFactor" 	default="0.25" />		
+	<arg name="enableHeadingSmoothing" 	default="false" />
+		
+	<arg name="pathDensity" 			default="0.5" />
+	<arg name="rollOutDensity" 			default="0.5" />
+	<arg name="rollOutsNumber" 			default="6"    />
+	
+	<arg name="maxVelocity" 			default="6.0" />
+	<arg name="minVelocity" 			default="0.1" />	
+	<arg name="maxLocalPlanDistance" 	default="50" />	
+	<arg name="horizonDistance" 		default="200"  />
+	
+	<arg name="speedProfileFactor"		default="1.2"  />
+	
+	<arg name="smoothingToleranceError" default="0.05"  />
+	<arg name="smoothingDataWeight"		default="0.45"  />
+	<arg name="smoothingSmoothWeight"	default="0.4"  />	
+	<arg name="enableLaneChange" 		default="false" />	
+			
+	<node pkg="local_planner" type="rollout_generator_node" name="rollout_generator_node" output="screen">
+		<param name="samplingTipMargin" 		value="$(arg samplingTipMargin)"  /> 
+		<param name="samplingOutMargin" 		value="$(arg samplingOutMargin)" /> 
+		<param name="samplingSpeedFactor" 		value="$(arg samplingSpeedFactor)" />		
+		<param name="enableHeadingSmoothing" 	value="$(arg enableHeadingSmoothing)" />	
+			
+		<param name="pathDensity" 			    value="$(arg pathDensity)" />
+		<param name="rollOutDensity" 			value="$(arg rollOutDensity)" />
+		<param name="rollOutsNumber" 			value="$(arg rollOutsNumber)"    />
+		
+		<param name="maxVelocity" 				value="$(arg maxVelocity)" />
+		<param name="minVelocity" 				value="$(arg minVelocity)" />	
+		<param name="maxLocalPlanDistance" 		value="$(arg maxLocalPlanDistance)" />	
+		<param name="horizonDistance" 			value="$(arg horizonDistance)" />
+		
+		<param name="speedProfileFactor"		value="$(arg speedProfileFactor)"  />
+		
+		<param name="smoothingDataWeight"		value="$(arg smoothingDataWeight)"  />
+		<param name="smoothingSmoothWeight"		value="$(arg smoothingSmoothWeight)"  />
+		<param name="smoothingToleranceError"	value="$(arg smoothingToleranceError)"  />
+		
+		<param name="enableLaneChange" 			value="$(arg enableLaneChange)" />	
+		
+		
+	</node>				
+			
+</launch>
