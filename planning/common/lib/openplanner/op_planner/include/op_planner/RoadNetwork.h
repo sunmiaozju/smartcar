@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-03 11:02:36
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-15 11:06:18
+ * @LastEditTime: 2019-02-21 19:45:19
  */
 
 /// \file RoadNetwork.h
@@ -483,6 +483,7 @@ public:
 	bool bBefore;
 	bool bAfter;
 	double after_angle;
+	double direct_distance;
 
 	RelativeInfo()
 	{
@@ -496,6 +497,7 @@ public:
 		iBack = 0;
 		iGlobalPath = 0;
 		angle_diff = 0;
+		direct_distance = 0;
 	}
 };
 
@@ -894,6 +896,7 @@ public:
 	double 	minFollowingDistance; //should be bigger than Distance to follow
 	double 	minDistanceToAvoid; // should be smaller than minFollowingDistance and larger than maxDistanceToAvoid
 	double	maxDistanceToAvoid; // should be smaller than minDistanceToAvoid
+	double  lateralSkipDistance;
 	double 	speedProfileFactor;
 	double 	smoothingDataWeight;
 	double 	smoothingSmoothWeight;
@@ -922,6 +925,7 @@ public:
 	PlanningParams()
 	{
 		maxSpeed 						= 3;
+	    lateralSkipDistance             = 6.0; 
 		minSpeed 						= 0;
 		planningDistance 				= 10000;
 		microPlanDistance 				= 30;

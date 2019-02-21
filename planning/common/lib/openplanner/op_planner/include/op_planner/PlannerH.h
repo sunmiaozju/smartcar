@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @Date: 2019-02-03 11:02:36
+ * @LastEditors: sunm
+ * @LastEditTime: 2019-02-15 16:07:23
+ */
 
 /// \file PlannerH.h
 /// \brief Main functions for path generation (global and local)
