@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:13:45
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-15 10:29:23
+ * @LastEditTime: 2019-02-21 10:41:49
  */
 
 #ifndef ROLLOUT_GENERATOR_H
@@ -21,14 +21,10 @@
 #include <smartcar_msgs/LaneArray.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include "utils/utils.h"
+
 namespace RolloutGeneratorNS
 {
-
-#define distance2points(from, to) sqrt(pow(to.x - from.x, 2) + pow(to.y - from.y, 2))
-#define distance2points_pow(from, to) pow(to.x - from.x, 2) + pow(to.y - from.y, 2)
-#define calLength(v) sqrt(v.x *v.x + v.y * v.y)
-#define DEG2RAD M_PI / 180.
-#define RAD2DEG 180. / M_PI
 
 class RolloutGenerator
 {
@@ -45,6 +41,8 @@ private:
   ros::NodeHandle nh;
   ros::Publisher pub_localTrajectories;
   ros::Publisher pub_localTrajectoriesRviz;
+  ros::Publisher pub_centralPathSection;
+  ros::Publisher pub_testLane;
   ros::Subscriber sub_currentPose;
   ros::Subscriber sub_currentVelocity;
   ros::Subscriber sub_globalPlannerPath;
@@ -65,14 +63,9 @@ private:
                                  const double &minDistance,
                                  const double &waypointDensity,
                                  std::vector<PlannerHNS::WayPoint> &extractedPath);
-  int getNextClosePointIndex(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                             const PlannerHNS::WayPoint &current_pos,
-                             const int &prevIndex = 0);
-  double calDiffBetweenTwoAngle(const double &a1, const double &a2);
+
   void fixPathDensity(std::vector<PlannerHNS::WayPoint> &path, const double &pathDensity);
   void predictTimeCostForTrajectory(std::vector<PlannerHNS::WayPoint> &path, const PlannerHNS::WayPoint &currPose, const double &minSpeed);
-  double cast_from_PI_to_PI_Angle(const double &ang);
-  double cast_from_0_to_2PI_Angle(const double &ang);
   void trajectoryToMarkers(const std::vector<std::vector<std::vector<PlannerHNS::WayPoint>>> &paths, visualization_msgs::MarkerArray &markerArray);
 
 

@@ -36,6 +36,14 @@ include_directories(
 
 add_executable(rollout_generator_node 
                nodes/rollout_generator/rollout_generator_node.cpp
-               nodes/rollout_generator/rollout_generator.cpp)
+               nodes/rollout_generator/rollout_generator.cpp
+               utils/utils.cpp)
 target_link_libraries(rollout_generator_node ${catkin_LIBRARIES})
 
+add_executable(local_trajectory_generator_node 
+               nodes/local_trajectory_generator/local_trajectory_generator_node.cpp
+               nodes/local_trajectory_generator/local_trajectory_generator.cpp
+               utils/utils.cpp)
+target_link_libraries(local_trajectory_generator_node ${catkin_LIBRARIES})
+
+add_dependencies(rollout_generator_node local_trajectory_generator_node ${catkin_EXPORTED_TARGETS})

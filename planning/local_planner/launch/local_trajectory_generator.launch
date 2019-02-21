@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="local_planner" type="local_trajectory_generator_node" name="local_trajectory_generator_node" output="screen">
+    </node>
+</launch>

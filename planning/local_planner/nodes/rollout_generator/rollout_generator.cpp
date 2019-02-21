@@ -4,10 +4,12 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-15 11:16:23
+ * @LastEditTime: 2019-02-21 15:46:49
  */
 
 #include <rollout_generator/rollout_generator.h>
+
+using namespace UtilityNS;
 
 namespace RolloutGeneratorNS
 {
@@ -27,26 +29,28 @@ void RolloutGenerator::initROS()
     nh.param<double>("/rollout_generator_node/samplingOutMargin", PlanningParams.rollInMargin, 16);
     nh.param<double>("/rollout_generator_node/samplingSpeedFactor", PlanningParams.rollInSpeedFactor, 0.25);
     nh.param<bool>("/rollout_generator_node/enableHeadingSmoothing", PlanningParams.enableHeadingSmoothing, false);
-    
+
     nh.param<double>("/rollout_generator_node/horizonDistance", PlanningParams.horizonDistance, 200);
     nh.param<double>("/rollout_generaror_node/pathDensity", PlanningParams.pathDensity, 0.5);
     nh.param<bool>("/rollout_generaror_node/enableLaneChange", PlanningParams.enableLaneChange, false);
     nh.param<double>("/rollout_generaror_node/maxLocalPlanDistance", PlanningParams.microPlanDistance, 50);
-   
+
     nh.param<double>("/rollout_generaror_node/maxVelocity", PlanningParams.maxSpeed, 6.0);
     nh.param<double>("/rollout_generaror_node/minVelocity", PlanningParams.minSpeed, 0.1);
-    
+
     nh.param<double>("/rollout_generaror_node/rollOutDensity", PlanningParams.rollOutDensity, 0.5);
     nh.param<int>("/rollout_generaror_node/rollOutNumber", PlanningParams.rollOutNumber, 6);
-    
+
     nh.param<double>("/rollout_generaror_node/smoothingDataWeight", PlanningParams.smoothingDataWeight, 0.45);
     nh.param<double>("/rollout_generaror_node/smoothingSmoothWeight", PlanningParams.smoothingSmoothWeight, 0.4);
     nh.param<double>("/rollout_generaror_node/smoothingToleranceError", PlanningParams.smoothingToleranceError, 0.05);
-    
+
     nh.param<double>("/rollout_generaror_node/speedProfileFactor", PlanningParams.speedProfileFactor, 1.2);
 
-    pub_localTrajectories = nh.advertise<smartcar_msgs::LaneArray>("local_trajectories", 1);
-    pub_localTrajectoriesRviz = nh.advertise<visualization_msgs::MarkerArray>("local_trajectories_rviz", 1);
+    pub_localTrajectories = nh.advertise<smartcar_msgs::LaneArray>("local_rollouts", 1);
+    pub_localTrajectoriesRviz = nh.advertise<visualization_msgs::MarkerArray>("local_rollouts_rviz", 1);
+    pub_centralPathSection = nh.advertise<smartcar_msgs::Lane>("centralPathSection", 1);
+    pub_testLane = nh.advertise<visualization_msgs::Marker>("test_lane", 1);
 
     sub_currentPose = nh.subscribe("/current_pose", 10, &RolloutGenerator::getCurrentPose_cb, this);
     sub_globalPlannerPath = nh.subscribe("/lane_array", 1, &RolloutGenerator::getGlobalPlannerPath_cb, this);
@@ -67,7 +71,7 @@ void RolloutGenerator::run()
             for (size_t i = 0; i < globalPaths.size(); i++)
             {
                 centralTrajectorySmoothed.clear();
-                extractPartFromTrajectory(globalPaths[i], current_pose, PlanningParams.horizonDistance,
+                extractPartFromTrajectory(globalPaths[i], current_pose, 50,
                                           PlanningParams.pathDensity, centralTrajectorySmoothed);
                 globalPathSections.push_back(centralTrajectorySmoothed);
             }
@@ -101,14 +105,14 @@ void RolloutGenerator::run()
                 {
                     smartcar_msgs::Lane local_lane;
                     predictTimeCostForTrajectory(rollOuts[k][m], current_pose, PlanningParams.minSpeed);
+                    local_lane.waypoints.clear();
                     for (int h = 0; h < rollOuts[k][m].size(); h++)
                     {
-                        local_lane.waypoints.clear();
                         smartcar_msgs::Waypoint wp;
                         wp.pose.pose.position.x = rollOuts[k][m][h].pos.x;
                         wp.pose.pose.position.y = rollOuts[k][m][h].pos.y;
                         wp.pose.pose.position.z = rollOuts[k][m][h].pos.z;
-                        wp.pose.pose.orientation = tf::createQuaternionMsgFromYaw(cast_from_PI_to_PI_Angle(rollOuts[k][m][h].pos.a));
+                        wp.pose.pose.orientation = tf::createQuaternionMsgFromYaw(UtilityNS::cast_from_PI_to_PI_Angle(rollOuts[k][m][h].pos.a));
                         wp.lane_id = rollOuts[k][m][h].laneId;
                         local_lane.waypoints.push_back(wp);
                     }
@@ -117,14 +121,26 @@ void RolloutGenerator::run()
                 }
             }
             pub_localTrajectories.publish(local_lanes);
+
+            visualization_msgs::MarkerArray marker_rollouts;
+            trajectoryToMarkers(rollOuts, marker_rollouts);
+            pub_localTrajectoriesRviz.publish(marker_rollouts);
+
+            smartcar_msgs::Lane central_path_section;
+            for (size_t m = 0; m < globalPathSections.size(); m++)
+            {
+                for (size_t im = 0; im < globalPathSections[m].size(); im++)
+                {
+                    smartcar_msgs::Waypoint wp;
+                    wp.pose.pose.position.x = globalPathSections[m][im].pos.x;
+                    wp.pose.pose.position.y = globalPathSections[m][im].pos.y;
+                    wp.pose.pose.position.z = globalPathSections[m][im].pos.z;
+                    wp.a = globalPathSections[m][im].pos.a;
+                    central_path_section.waypoints.push_back(wp);
+                }
+            }
+            pub_centralPathSection.publish(central_path_section);
         }
-        // else
-        // {
-        //     ROS_ERROR("[rollout_generator_node] : not receive init_pose or global_path");
-        // }
-        visualization_msgs::MarkerArray marker_rollouts;
-        trajectoryToMarkers(rollOuts, marker_rollouts);
-        pub_localTrajectoriesRviz.publish(marker_rollouts);
 
         loop_rate.sleep();
     }
@@ -148,7 +164,7 @@ void RolloutGenerator::trajectoryToMarkers(const std::vector<std::vector<std::ve
             lane_waypoint_marker.points.clear();
             lane_waypoint_marker.id = i * 10 + k;
 
-            for(size_t m = 0; m < paths[i][k].size(); m++)
+            for (size_t m = 0; m < paths[i][k].size(); m++)
             {
                 geometry_msgs::Point wp;
                 wp.x = paths[i][k][m].pos.x;
@@ -175,7 +191,7 @@ void RolloutGenerator::predictTimeCostForTrajectory(std::vector<PlannerHNS::WayP
     for (size_t i = 0; i < path.size(); i++)
         path[i].timeCost = -1;
 
-    int closeFrontIndex = getNextClosePointIndex(path, p);
+    int closeFrontIndex = UtilityNS::getNextClosePointIndex(path, p);
     double total_distance = 0;
 
     path[closeFrontIndex].timeCost = 0;
@@ -199,7 +215,9 @@ void RolloutGenerator::extractPartFromTrajectory(const std::vector<PlannerHNS::W
     if (originalPath.size() < 2)
         return;
     extractedPath.clear();
-    int close_index = getNextClosePointIndex(originalPath, currentPos);
+    int close_index = UtilityNS::getNextClosePointIndex(originalPath, currentPos);
+    // printf("%d\n", close_index);
+
     double dis = 0;
     if (close_index >= originalPath.size() - 1)
         close_index = originalPath.size() - 2;
@@ -209,7 +227,8 @@ void RolloutGenerator::extractPartFromTrajectory(const std::vector<PlannerHNS::W
         extractedPath.insert(extractedPath.begin(), originalPath[i]);
         if (i < originalPath.size())
             dis += hypot(originalPath[i].pos.y - originalPath[i + 1].pos.y, originalPath[i].pos.x - originalPath[i + 1].pos.x);
-        if (dis > 10)
+        // printf("%f\n", dis);
+        if (dis > 2)
             break;
     }
     dis = 0;
@@ -227,6 +246,7 @@ void RolloutGenerator::extractPartFromTrajectory(const std::vector<PlannerHNS::W
                   << "[loacal_planner_node] Extracted Rollout Path is too Small, Size = " << extractedPath.size() << std::endl;
         return;
     }
+    // UtilityNS::visualLaneInRviz(extractedPath, pub_testLane);
     fixPathDensity(extractedPath, waypointDensity);
     calcAngleAndCost(extractedPath);
 }
@@ -280,54 +300,6 @@ void RolloutGenerator::fixPathDensity(std::vector<PlannerHNS::WayPoint> &path, c
     path = fixedPath;
 }
 
-int RolloutGenerator::getNextClosePointIndex(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                                             const PlannerHNS::WayPoint &curr_pos,
-                                             const int &prevIndex)
-{
-    if (trajectory.size() < 2 || prevIndex < 0)
-        return 0;
-    double dis = 0, min_dis = DBL_MAX;
-    double angle_diff;
-    int min_index = prevIndex;
-
-    for (size_t i = prevIndex; i < trajectory.size(); i++)
-    {
-        dis = distance2points_pow(trajectory[i].pos, curr_pos.pos);
-        angle_diff = calDiffBetweenTwoAngle(trajectory[i].pos.a, curr_pos.pos.a) * RAD2DEG;
-
-        if (dis < min_dis && angle_diff < 45)
-        {
-            min_index = i;
-            min_dis = dis;
-        }
-    }
-
-    if (min_index < (int)trajectory.size() - 2)
-    {
-        PlannerHNS::GPSPoint closest, next;
-        closest = trajectory[min_index].pos;
-        next = trajectory[min_index + 1].pos;
-        PlannerHNS::GPSPoint v_1(curr_pos.pos.x - closest.x, curr_pos.pos.y - closest.y, 0, 0);
-        double length1 = calLength(v_1);
-        PlannerHNS::GPSPoint v_2(next.x - closest.x, next.y - closest.y, 0, 0);
-        double length2 = calLength(v_2);
-        double angle = cast_from_0_to_2PI_Angle(acos((v_1.x * v_2.x + v_1.y * v_2.y) / (length1 * length2)));
-        if (angle <= M_PI_2)
-            min_index = min_index + 1;
-    }
-    return min_index;
-}
-
-double RolloutGenerator::calDiffBetweenTwoAngle(const double &a1, const double &a2)
-{
-    double diff = a1 - a2;
-    if (diff < 0)
-        diff = a2 - a1;
-    if (diff > M_PI)
-        diff = 2.0 * M_PI - diff;
-    return diff;
-}
-
 void RolloutGenerator::getCurrentPose_cb(const geometry_msgs::PoseStampedConstPtr &msg)
 {
     current_pose = PlannerHNS::WayPoint(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z, tf::getYaw(msg->pose.orientation));
@@ -371,19 +343,19 @@ double RolloutGenerator::calcAngleAndCost(std::vector<PlannerHNS::WayPoint> &pat
         return 0;
     if (path.size() == 2)
     {
-        path[0].pos.a = cast_from_0_to_2PI_Angle(atan2(path[1].pos.y - path[0].pos.y, path[1].pos.x - path[0].pos.x));
+        path[0].pos.a = UtilityNS::cast_from_0_to_2PI_Angle(atan2(path[1].pos.y - path[0].pos.y, path[1].pos.x - path[0].pos.x));
         path[0].cost = 0;
         path[1].pos.a = path[0].pos.a;
         path[1].cost = path[0].cost + distance2points(path[0].pos, path[1].pos);
         return path[1].cost;
     }
 
-    path[0].pos.a = cast_from_0_to_2PI_Angle(atan2(path[1].pos.y - path[0].pos.y, path[1].pos.x - path[0].pos.x));
+    path[0].pos.a = UtilityNS::cast_from_0_to_2PI_Angle(atan2(path[1].pos.y - path[0].pos.y, path[1].pos.x - path[0].pos.x));
     path[0].cost = 0;
 
     for (int j = 1; j < path.size() - 1; j++)
     {
-        path[j].pos.a = cast_from_0_to_2PI_Angle(atan2(path[j + 1].pos.y - path[j].pos.y, path[j + 1].pos.x - path[j].pos.x));
+        path[j].pos.a = UtilityNS::cast_from_0_to_2PI_Angle(atan2(path[j + 1].pos.y - path[j].pos.y, path[j + 1].pos.x - path[j].pos.x));
         path[j].cost = path[j - 1].cost + distance2points(path[j - 1].pos, path[j].pos);
     }
 
@@ -392,43 +364,5 @@ double RolloutGenerator::calcAngleAndCost(std::vector<PlannerHNS::WayPoint> &pat
     path[j].cost = path[j - 1].cost + distance2points(path[j - 1].pos, path[j].pos);
 
     return path[j].cost;
-}
-
-double RolloutGenerator::cast_from_0_to_2PI_Angle(const double &ang)
-{
-    double angle = 0;
-    if (ang < -2.0 * M_PI || ang > 2.0 * M_PI)
-    {
-        angle = fmod(ang, 2.0 * M_PI);
-    }
-    else
-        angle = ang;
-
-    if (angle < 0)
-    {
-        angle = 2.0 * M_PI + angle;
-    }
-    return angle;
-}
-
-double RolloutGenerator::cast_from_PI_to_PI_Angle(const double &ang)
-{
-    double angle = 0;
-    if (ang < -2.0 * M_PI || ang > 2.0 * M_PI)
-    {
-        angle = fmod(ang, 2.0 * M_PI);
-    }
-    else
-        angle = ang;
-
-    if (angle < -M_PI)
-    {
-        angle += 2.0 * M_PI;
-    }
-    else if (angle > M_PI)
-    {
-        angle -= 2.0 * M_PI;
-    }
-    return angle;
 }
 } // namespace RolloutGeneratorNS
