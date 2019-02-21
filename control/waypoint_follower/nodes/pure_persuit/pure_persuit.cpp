@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-21 10:47:42
+ * @LastEditTime: 2019-02-21 10:52:21
+ */
 // ROS Includes
 #include <ros/ros.h>
 
@@ -509,6 +517,7 @@ void PurePursuitNode::visualInRviz()
                                                                               0 * (M_PI / 180.0),
                                                                               current_yaw + M_PI / 2.0);
     msg_car_marker.pose.position = current_pose_.position;
+    msg_car_marker.pose.position.z = current_waypoints_[next_waypoint_number_ - 4].pose.pose.position.z;
     msg_car_marker.color.r = 0.7;
     msg_car_marker.color.g = 0.7;
     msg_car_marker.color.b = 0.7;

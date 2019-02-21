@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-01-29 21:10:23
+ * @LastEditTime: 2019-02-21 10:48:35
+ */
 #ifndef PURE_PURSUIT_H
 #define PURE_PURSUIT_H
 
