@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-21 15:46:49
+ * @LastEditTime: 2019-02-25 14:32:37
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -58,10 +58,14 @@ void RolloutGenerator::initROS()
     current_pose.v = 1;
 }
 
+/**
+ * @description: 主循环函数
+ * @param {type} 
+ * @return: 
+ */
 void RolloutGenerator::run()
 {
     ros::Rate loop_rate(100);
-
     while (ros::ok())
     {
         ros::spinOnce();
@@ -76,28 +80,25 @@ void RolloutGenerator::run()
                 globalPathSections.push_back(centralTrajectorySmoothed);
             }
             std::vector<PlannerHNS::WayPoint> sampled_points;
-            Planner.GenerateRunoffTrajectory(globalPathSections,
-                                             current_pose,
-                                             PlanningParams.enableLaneChange,
-                                             VehicleStatus.speed,
-                                             PlanningParams.microPlanDistance,
-                                             PlanningParams.maxSpeed,
-                                             PlanningParams.minSpeed,
-                                             PlanningParams.carTipMargin,
-                                             PlanningParams.rollInMargin,
-                                             PlanningParams.rollInSpeedFactor,
-                                             PlanningParams.pathDensity,
-                                             PlanningParams.rollOutDensity,
-                                             PlanningParams.rollOutNumber,
-                                             PlanningParams.smoothingDataWeight,
-                                             PlanningParams.smoothingSmoothWeight,
-                                             PlanningParams.smoothingToleranceError,
-                                             PlanningParams.speedProfileFactor,
-                                             PlanningParams.enableHeadingSmoothing,
-                                             -1, -1,
-                                             rollOuts,
-                                             sampled_points);
+            generateRunoffTrajectory(globalPathSections,
+                                     current_pose,
+                                     VehicleStatus.speed,
+                                     PlanningParams.microPlanDistance,
+                                     PlanningParams.carTipMargin,
+                                     PlanningParams.rollInMargin,
+                                     PlanningParams.speedProfileFactor,
+                                     PlanningParams.pathDensity,
+                                     PlanningParams.rollOutDensity,
+                                     PlanningParams.rollOutNumber,
+                                     PlanningParams.smoothingDataWeight,
+                                     PlanningParams.smoothingSmoothWeight,
+                                     PlanningParams.smoothingToleranceError,
+                                     rollOuts,
+                                     sampled_points);
 
+            // visualInRviz(test_points);
+            // printf("%d, %d\n", int(rollOuts.size()), int(rollOuts[0].size()));
+            // pub local rollouts
             smartcar_msgs::LaneArray local_lanes;
             for (size_t k = 0; k < rollOuts.size(); k++)
             {
@@ -122,6 +123,7 @@ void RolloutGenerator::run()
             }
             pub_localTrajectories.publish(local_lanes);
 
+            // pub lcoal rollouts in rviz
             visualization_msgs::MarkerArray marker_rollouts;
             trajectoryToMarkers(rollOuts, marker_rollouts);
             pub_localTrajectoriesRviz.publish(marker_rollouts);
@@ -144,6 +146,357 @@ void RolloutGenerator::run()
 
         loop_rate.sleep();
     }
+}
+/**
+ * @description:生成候选局部规划路径rollouts 
+ * @param {type} 
+ * @return: 
+ */
+void RolloutGenerator::generateRunoffTrajectory(const std::vector<std::vector<PlannerHNS::WayPoint>> &referencePaths,
+                                                const PlannerHNS::WayPoint &carPos,
+                                                const double &speed,
+                                                const double &microPlanDistance,
+                                                const double &carTipMargin,
+                                                const double &rollInMargin,
+                                                const double &rollInSpeedFactor,
+                                                const double &pathDensity,
+                                                const double &rollOutDensity,
+                                                const int &rollOutNumber,
+                                                const double &SmoothDataWeight,
+                                                const double &SmoothWeight,
+                                                const double &SmoothTolerance,
+                                                std::vector<std::vector<std::vector<PlannerHNS::WayPoint>>> &rollOutsPaths,
+                                                std::vector<PlannerHNS::WayPoint> &sampledPoints_debug)
+{
+
+    if (referencePaths.size() == 0)
+        return;
+    if (microPlanDistance <= 0)
+        return;
+    rollOutsPaths.clear();
+    sampledPoints_debug.clear(); //for visualization only
+
+    for (unsigned int i = 0; i < referencePaths.size(); i++)
+    {
+        std::vector<std::vector<PlannerHNS::WayPoint>> local_rollOutPaths;
+        int s_index = 0, e_index = 0;
+        std::vector<double> e_distances;
+
+        if (referencePaths.at(i).size() > 0)
+        {
+            calculateRollInTrajectories(carPos, speed, referencePaths.at(i), s_index, e_index, e_distances,
+                                        local_rollOutPaths, microPlanDistance, carTipMargin, rollInMargin,
+                                        rollInSpeedFactor, pathDensity, rollOutDensity, rollOutNumber,
+                                        SmoothDataWeight, SmoothWeight, SmoothTolerance, sampledPoints_debug);
+        }
+        rollOutsPaths.push_back(local_rollOutPaths);
+    }
+}
+/**
+ * @description: 由中心轨迹的采样点计算候选rollouts的采样点并平滑
+ * @param {type} 
+ * @return: 
+ */
+void RolloutGenerator::calculateRollInTrajectories(const PlannerHNS::WayPoint &carPos,
+                                                   const double &speed,
+                                                   const std::vector<PlannerHNS::WayPoint> &originalCenter,
+                                                   int &start_index,
+                                                   int &end_index,
+                                                   std::vector<double> &end_laterals,
+                                                   std::vector<std::vector<PlannerHNS::WayPoint>> &rollInPaths,
+                                                   const double &max_roll_distance,
+                                                   const double &carTipMargin,
+                                                   const double &rollInMargin,
+                                                   const double &rollInSpeedFactor,
+                                                   const double &pathDensity,
+                                                   const double &rollOutDensity,
+                                                   const int &rollOutNumber,
+                                                   const double &SmoothDataWeight,
+                                                   const double &SmoothWeight,
+                                                   const double &SmoothTolerance,
+                                                   std::vector<PlannerHNS::WayPoint> &sampledPoints)
+{
+    PlannerHNS::WayPoint p;
+
+    int iLimitIndex = (carTipMargin / 0.3) / pathDensity;
+    if (iLimitIndex >= originalCenter.size())
+        iLimitIndex = originalCenter.size() - 1;
+
+    //Get Closest Index
+    PlannerHNS::RelativeInfo info;
+    UtilityNS::getRelativeInfo(originalCenter, carPos, info);
+
+    double remaining_distance = 0;
+    int close_index = info.iBack;
+    for (unsigned int i = close_index; i < originalCenter.size() - 1; i++)
+    {
+        if (i > 0)
+            remaining_distance += distance2points(originalCenter[i].pos, originalCenter[i + 1].pos);
+    }
+
+    double initial_roll_in_distance = info.perp_distance; //GetPerpDistanceToTrajectorySimple(originalCenter, carPos, close_index);
+
+    std::vector<PlannerHNS::WayPoint> RollOutStratPath;
+
+    //calculate the starting index
+    double d_limit = 0;
+    unsigned int far_index = close_index;
+
+    //calculate end index
+    double start_distance = rollInSpeedFactor * speed + rollInMargin;
+    if (start_distance > remaining_distance)
+        start_distance = remaining_distance;
+
+    d_limit = 0;
+    for (unsigned int i = close_index; i < originalCenter.size(); i++)
+    {
+        if (i > 0)
+            d_limit += distance2points(originalCenter[i].pos, originalCenter[i - 1].pos);
+
+        if (d_limit >= start_distance)
+        {
+            far_index = i;
+            break;
+        }
+    }
+
+    int centralTrajectoryIndex = rollOutNumber / 2;
+    std::vector<double> end_distance_list;
+    for (int i = 0; i < rollOutNumber + 1; i++)
+    {
+        double end_roll_in_distance = rollOutDensity * (i - centralTrajectoryIndex);
+        end_distance_list.push_back(end_roll_in_distance);
+    }
+
+    start_index = close_index;
+    end_index = far_index;
+    end_laterals = end_distance_list;
+
+    //calculate the actual calculation starting index
+    d_limit = 0;
+    unsigned int smoothing_start_index = start_index;
+    unsigned int smoothing_end_index = end_index;
+
+    for (unsigned int i = smoothing_start_index; i < originalCenter.size(); i++)
+    {
+        if (i > 0)
+            d_limit += distance2points(originalCenter[i].pos, originalCenter[i - 1].pos);
+        if (d_limit > carTipMargin)
+            break;
+
+        smoothing_start_index++;
+    }
+
+    d_limit = 0;
+    for (unsigned int i = end_index; i < originalCenter.size(); i++)
+    {
+        if (i > 0)
+            d_limit += distance2points(originalCenter[i].pos, originalCenter[i - 1].pos);
+        if (d_limit > carTipMargin)
+            break;
+
+        smoothing_end_index++;
+    }
+
+    int nSteps = end_index - smoothing_start_index;
+
+    std::vector<double> inc_list;
+    rollInPaths.clear();
+    std::vector<double> inc_list_inc;
+    for (int i = 0; i < rollOutNumber + 1; i++)
+    {
+        double diff = end_laterals.at(i) - initial_roll_in_distance;
+        inc_list.push_back(diff / (double)nSteps);
+        rollInPaths.push_back(std::vector<PlannerHNS::WayPoint>());
+        inc_list_inc.push_back(0);
+    }
+
+    std::vector<std::vector<PlannerHNS::WayPoint>> execluded_from_smoothing;
+    for (unsigned int i = 0; i < rollOutNumber + 1; i++)
+        execluded_from_smoothing.push_back(std::vector<PlannerHNS::WayPoint>());
+
+    //Insert First strait points within the tip of the car range
+    for (unsigned int j = start_index; j < smoothing_start_index; j++)
+    {
+        p = originalCenter.at(j);
+        double original_speed = p.v;
+        for (unsigned int i = 0; i < rollOutNumber + 1; i++)
+        {
+            p.pos.x = originalCenter.at(j).pos.x - initial_roll_in_distance * cos(p.pos.a + M_PI_2);
+            p.pos.y = originalCenter.at(j).pos.y - initial_roll_in_distance * sin(p.pos.a + M_PI_2);
+
+            if (i != centralTrajectoryIndex)
+                p.v = original_speed * LANE_CHANGE_SPEED_FACTOR;
+            else
+                p.v = original_speed;
+
+            if (j < iLimitIndex)
+                execluded_from_smoothing.at(i).push_back(p);
+            else
+                rollInPaths.at(i).push_back(p);
+
+            sampledPoints.push_back(p);
+        }
+    }
+
+
+    for (unsigned int j = smoothing_start_index; j < end_index; j++)
+    {
+        p = originalCenter.at(j);
+        double original_speed = p.v;
+        for (unsigned int i = 0; i < rollOutNumber + 1; i++)
+        {
+            inc_list_inc[i] += inc_list[i];
+            double d = inc_list_inc[i];
+            p.pos.x = originalCenter.at(j).pos.x - initial_roll_in_distance * cos(p.pos.a + M_PI_2) - d * cos(p.pos.a + M_PI_2);
+            p.pos.y = originalCenter.at(j).pos.y - initial_roll_in_distance * sin(p.pos.a + M_PI_2) - d * sin(p.pos.a + M_PI_2);
+
+            if (i != centralTrajectoryIndex)
+                p.v = original_speed * LANE_CHANGE_SPEED_FACTOR;
+            else
+                p.v = original_speed;
+
+            rollInPaths.at(i).push_back(p);
+
+            sampledPoints.push_back(p);
+        }
+    }
+    //Insert last strait points to make better smoothing
+    for (unsigned int j = end_index; j < smoothing_end_index; j++)
+    {
+        p = originalCenter.at(j);
+        double original_speed = p.v;
+        for (unsigned int i = 0; i < rollOutNumber + 1; i++)
+        {
+            double d = end_laterals.at(i);
+            p.pos.x = originalCenter.at(j).pos.x - d * cos(p.pos.a + M_PI_2);
+            p.pos.y = originalCenter.at(j).pos.y - d * sin(p.pos.a + M_PI_2);
+            if (i != centralTrajectoryIndex)
+                p.v = original_speed * LANE_CHANGE_SPEED_FACTOR;
+            else
+                p.v = original_speed;
+            rollInPaths.at(i).push_back(p);
+            sampledPoints.push_back(p);
+        }
+    }
+
+    for (unsigned int i = 0; i < rollOutNumber + 1; i++)
+        rollInPaths.at(i).insert(rollInPaths.at(i).begin(), execluded_from_smoothing.at(i).begin(), execluded_from_smoothing.at(i).end());
+
+    d_limit = 0;
+    for (unsigned int j = smoothing_end_index; j < originalCenter.size(); j++)
+    {
+        if (j > 0)
+            d_limit += distance2points(originalCenter.at(j).pos, originalCenter.at(j - 1).pos);
+
+        if (d_limit > max_roll_distance)
+            break;
+
+        p = originalCenter.at(j);
+        double original_speed = p.v;
+        for (unsigned int i = 0; i < rollInPaths.size(); i++)
+        {
+            double d = end_laterals.at(i);
+            p.pos.x = originalCenter.at(j).pos.x - d * cos(p.pos.a + M_PI_2);
+            p.pos.y = originalCenter.at(j).pos.y - d * sin(p.pos.a + M_PI_2);
+
+            if (i != centralTrajectoryIndex)
+                p.v = original_speed * LANE_CHANGE_SPEED_FACTOR;
+            else
+                p.v = original_speed;
+
+            rollInPaths.at(i).push_back(p);
+
+            sampledPoints.push_back(p);
+        }
+    }
+
+    for (unsigned int i = 0; i < rollOutNumber + 1; i++)
+    {
+        smoothPath(rollInPaths.at(i), SmoothDataWeight, SmoothWeight, SmoothTolerance);
+    }
+}
+
+/**
+ * @description: 平滑生成的曲线 
+ * @param {type} 
+ * @return: 
+ */
+void RolloutGenerator::smoothPath(std::vector<PlannerHNS::WayPoint> &path, double weight_data,
+                                  double weight_smooth, double tolerance)
+{
+    if (path.size() <= 2)
+        return;
+
+    const std::vector<PlannerHNS::WayPoint> &path_in = path;
+    std::vector<PlannerHNS::WayPoint> smoothPath_out = path_in;
+
+    double change = tolerance;
+    double xtemp, ytemp;
+    int nIterations = 0;
+
+    int size = path_in.size();
+
+    while (change >= tolerance)
+    {
+        change = 0.0;
+        for (int i = 1; i < size - 1; i++)
+        {
+            xtemp = smoothPath_out[i].pos.x;
+            ytemp = smoothPath_out[i].pos.y;
+
+            smoothPath_out[i].pos.x += weight_data * (path_in[i].pos.x - smoothPath_out[i].pos.x);
+            smoothPath_out[i].pos.y += weight_data * (path_in[i].pos.y - smoothPath_out[i].pos.y);
+
+            smoothPath_out[i].pos.x += weight_smooth * (smoothPath_out[i - 1].pos.x + smoothPath_out[i + 1].pos.x - (2.0 * smoothPath_out[i].pos.x));
+            smoothPath_out[i].pos.y += weight_smooth * (smoothPath_out[i - 1].pos.y + smoothPath_out[i + 1].pos.y - (2.0 * smoothPath_out[i].pos.y));
+
+            change += fabs(xtemp - smoothPath_out[i].pos.x);
+            change += fabs(ytemp - smoothPath_out[i].pos.y);
+        }
+        nIterations++;
+    }
+    path = smoothPath_out;
+}
+
+/**
+ * @description: 测试函数：在RVIZ可视化一些测试点 
+ * @param {type} 
+ * @return: 
+ */
+void RolloutGenerator::visualInRviz(std::vector<PlannerHNS::WayPoint> test_points)
+{
+    pub_test = nh.advertise<visualization_msgs::MarkerArray>("test_points", 1);
+    visualization_msgs::MarkerArray test_markers;
+    test_markers.markers.clear();
+
+    visualization_msgs::Marker test_marker;
+    test_marker.header.frame_id = "map";
+    test_marker.header.stamp = ros::Time();
+    test_marker.ns = "test_points";
+    test_marker.type = visualization_msgs::Marker::SPHERE;
+    test_marker.action = visualization_msgs::Marker::ADD;
+    test_marker.frame_locked = false;
+
+    test_marker.scale.x = 0.1;
+    test_marker.scale.y = 0.1;
+    test_marker.scale.z = 0.1;
+
+    test_marker.color.a = 1.0;
+    test_marker.color.r = 1.0;
+    test_marker.color.g = 0.0;
+    test_marker.color.b = 0.0;
+
+    for (int i = 0; i < test_points.size(); i++)
+    {
+        test_marker.pose.position.x = test_points[i].pos.x;
+        test_marker.pose.position.y = test_points[i].pos.y;
+        test_marker.pose.position.z = 0;
+        test_marker.id = i;
+        test_markers.markers.push_back(test_marker);
+    }
+
+    pub_test.publish(test_markers);
 }
 
 void RolloutGenerator::trajectoryToMarkers(const std::vector<std::vector<std::vector<PlannerHNS::WayPoint>>> &paths, visualization_msgs::MarkerArray &markerArray)

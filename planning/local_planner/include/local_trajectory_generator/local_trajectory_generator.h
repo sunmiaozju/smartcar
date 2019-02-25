@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:55:06
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-21 11:01:09
+ * @LastEditTime: 2019-02-25 14:08:22
  */
 
 #ifndef LOCAL_TRAJECTORY_GENERATOR_H
@@ -64,9 +64,6 @@ class LocalTrajectoryGenerator
                                                          const PlannerHNS::CAR_BASIC_INFO &car_info,
                                                          const std::vector<PlannerHNS::DetectedObject> &obj_list);
 
-  bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                       const PlannerHNS::WayPoint &p,
-                       PlannerHNS::RelativeInfo &info);
   void calLateralAndLongitudinalCostsStatic(std::vector<PlannerHNS::TrajectoryCost> &trajectoryCosts,
                                             const std::vector<std::vector<PlannerHNS::WayPoint>> &rollOuts,
                                             const std::vector<PlannerHNS::WayPoint> &centerPath,

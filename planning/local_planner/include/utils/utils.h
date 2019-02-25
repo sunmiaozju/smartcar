@@ -4,12 +4,13 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-18 17:07:52
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-21 10:09:22
+ * @LastEditTime: 2019-02-25 13:25:29
  */
 #ifndef LOCAL_PLANNER_UTILS_H
 #define LOCAL_PLANNER_UTILS_H
 
 #include <op_planner/RoadNetwork.h>
+#include "op_planner/MatrixOperations.h"
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <ros/ros.h>
@@ -31,6 +32,9 @@ double cast_from_0_to_2PI_Angle(const double &ang);
 double cast_from_PI_to_PI_Angle(const double &ang);
 double diffBetweenTwoAngle(const double &a1, const double &a2);
 void visualLaneInRviz(const std::vector<PlannerHNS::WayPoint> &lane, ros::Publisher pub_testLane);
+bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
+                     const PlannerHNS::WayPoint &p,
+                     PlannerHNS::RelativeInfo &info);
 } // namespace UtilityNS
 
 #endif //LOCAL_PLANNER_UTILS_H

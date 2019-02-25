@@ -155,4 +155,90 @@ double diffBetweenTwoAngle(const double &a1, const double &a2)
         diff = 2 * M_PI - diff;
     return diff;
 }
+
+/**
+ * @description: 计算某一个轨迹到某一个点的相对位置
+ * @param {type} 
+ * @return: 
+ */
+bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
+                     const PlannerHNS::WayPoint &p,
+                     PlannerHNS::RelativeInfo &info)
+{
+    if (trajectory.size() < 2)
+        return false;
+
+    PlannerHNS::WayPoint p0, p1;
+    if (trajectory.size() == 2)
+    {
+        p0 = trajectory[0];
+        p1 = PlannerHNS::WayPoint((p0.pos.x + trajectory[1].pos.x) / 2.0,
+                                  (p0.pos.y + trajectory[1].pos.y) / 2.0,
+                                  (p0.pos.z + trajectory[1].pos.z) / 2.0,
+                                  p0.pos.a);
+        info.iBack = 0;
+        info.iFront = 1;
+    }
+    else
+    {
+        info.iFront = UtilityNS::getNextClosePointIndex(trajectory, p);
+
+        if (info.iFront > 0)
+            info.iBack = info.iFront - 1;
+        else
+            info.iBack = 0;
+
+        if (info.iFront == 0)
+        {
+            p0 = trajectory[info.iFront];
+            p1 = trajectory[info.iFront + 1];
+        }
+        else if (info.iFront > 0 && info.iFront < trajectory.size() - 1)
+        {
+            p0 = trajectory[info.iFront - 1];
+            p1 = trajectory[info.iFront];
+        }
+        else
+        {
+            p0 = trajectory[info.iFront - 1];
+            p1 = PlannerHNS::WayPoint((p0.pos.x + trajectory[info.iFront].pos.x) / 2.0,
+                                      (p0.pos.y + trajectory[info.iFront].pos.y) / 2.0,
+                                      (p0.pos.z + trajectory[info.iFront].pos.z) / 2.0,
+                                      p0.pos.a);
+        }
+    }
+
+    PlannerHNS::WayPoint prevWP = p0;
+    PlannerHNS::Mat3 rotationMat(-p1.pos.a);
+    PlannerHNS::Mat3 translationMat(-p.pos.x, -p.pos.y);
+    PlannerHNS::Mat3 invRotationMat(p1.pos.a);
+    PlannerHNS::Mat3 invTranslationMat(p.pos.x, p.pos.y);
+
+    p0.pos = translationMat * p0.pos;
+    p0.pos = rotationMat * p0.pos;
+
+    p1.pos = translationMat * p1.pos;
+    p1.pos = rotationMat * p1.pos;
+
+    double k = (p1.pos.y - p0.pos.y) / (p1.pos.x - p0.pos.x);
+    info.perp_distance = p1.pos.y - k * p1.pos.x;
+
+    if (std::isnan(info.perp_distance) || std::isinf(info.perp_distance))
+        info.perp_distance = 0;
+
+    info.to_front_distance = fabs(p1.pos.x);
+
+    info.perp_point = p1;
+    info.perp_point.pos.x = 0;
+    info.perp_point.pos.y = info.perp_distance;
+
+    info.perp_point.pos = invRotationMat * info.perp_point.pos;
+    info.perp_point.pos = invTranslationMat * info.perp_point.pos;
+
+    info.from_back_distance = hypot(info.perp_point.pos.y - prevWP.pos.y, info.perp_point.pos.x - prevWP.pos.x);
+    info.angle_diff = UtilityNS::diffBetweenTwoAngle(p1.pos.a, p.pos.a) * RAD2DEG;
+
+    info.direct_distance = hypot(p1.pos.y - p.pos.y, p1.pos.x - p.pos.x);
+    return true;
+}
 } // namespace UtilityNS
