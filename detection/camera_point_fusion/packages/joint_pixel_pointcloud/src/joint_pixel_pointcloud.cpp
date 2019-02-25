@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-21 21:34:40
+ * @LastEditTime: 2019-02-22 10:21:34
+ */
 #include "joint_pixel_pointcloud.h"
 
 using namespace NODE_JOINT_PIXEL_POINTCLOUD;
@@ -132,27 +140,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
         }
     }
 
-    visualization_msgs::MarkerArray objs_marker;
-    for (size_t k = 0; k < objs.size(); k++)
-    {
-        visualization_msgs::Marker obj_marker;
-        obj_marker.header.frame_id = cloud_msg->header.frame_id;
-        obj_marker.header.stamp = ros::Time();
-        obj_marker.id = k;
-        obj_marker.type = visualization_msgs::Marker::CUBE;
-        obj_marker.action = visualization_msgs::Marker::ADD;
-        category_deal(obj_marker, objs[k]);
-        obj_marker.pose.position.x = (objs[k].xmin_3d_bbox + objs[k].xmax_3d_bbox) / 2;
-        obj_marker.pose.position.y = (objs[k].ymin_3d_bbox + objs[k].ymax_3d_bbox) / 2;
-        obj_marker.pose.position.z = (objs[k].zmin_3d_bbox + objs[k].zmax_3d_bbox) / 2;
-        // obj_marker.scale.z = 0.5;
-        obj_marker.scale.x = std::max(float(0.1), objs[k].xmax_3d_bbox - objs[k].xmin_3d_bbox);
-        obj_marker.scale.y = std::max(float(0.1), objs[k].ymax_3d_bbox - objs[k].ymin_3d_bbox);
-        // obj_marker.scale.z = std::max(float(0.1), objs[k].zmax_3d_bbox - objs[k].zmin_3d_bbox);
-        obj_marker.color.a = 1.0;
-        objs_marker.markers.push_back(obj_marker);
-    }
-    objs_pub.publish(objs_marker);
+    publishObjs();
 
     sensor_msgs::PointCloud2 test_point;
     pcl::toROSMsg(*transformed_cloud, test_point);
@@ -163,6 +151,59 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     pcl::toROSMsg(*out_cloud, out_cloud_msg);
     out_cloud_msg.header = cloud_msg->header;
     pub_fusion_cloud.publish(out_cloud_msg);
+}
+
+void PixelCloudFusion::publishObjs()
+{
+    visualization_msgs::MarkerArray objs_marker;
+    visualization_msgs::Marker obj_marker;
+
+    smartcar_msgs::DetectedObjectArray output_objs;
+    smartcar_msgs::DetectedObject output_obj;
+
+    obj_marker.header.frame_id = "map";
+    obj_marker.header.stamp = ros::Time();
+    obj_marker.type = visualization_msgs::Marker::CUBE;
+    obj_marker.action = visualization_msgs::Marker::ADD;
+    obj_marker.color.a = 1.0;
+
+    for (size_t k = 0; k < objs.size(); k++)
+    {
+        obj_marker.id = k;
+        category_deal(obj_marker, objs[k]);
+        obj_marker.pose.position.x = (objs[k].xmin_3d_bbox + objs[k].xmax_3d_bbox) / 2;
+        obj_marker.pose.position.y = (objs[k].ymin_3d_bbox + objs[k].ymax_3d_bbox) / 2;
+        obj_marker.pose.position.z = (objs[k].zmin_3d_bbox + objs[k].zmax_3d_bbox) / 2;
+        obj_marker.scale.x = std::max(float(0.1), objs[k].xmax_3d_bbox - objs[k].xmin_3d_bbox);
+        obj_marker.scale.y = std::max(float(0.1), objs[k].ymax_3d_bbox - objs[k].ymin_3d_bbox);
+        objs_marker.markers.push_back(obj_marker);
+
+        output_obj.id = k;
+        output_obj.pose.position.x = (objs[k].xmin_3d_bbox + objs[k].xmax_3d_bbox) / 2;
+        output_obj.pose.position.y = (objs[k].ymin_3d_bbox + objs[k].ymax_3d_bbox) / 2;
+        output_obj.pose.position.z = (objs[k].zmin_3d_bbox + objs[k].zmax_3d_bbox) / 2;
+        output_obj.convex_hull.polygon.points.clear();
+        geometry_msgs::Point32 pp;
+        pp.x = objs[k].xmin_3d_bbox;
+        pp.y = objs[k].ymin_3d_bbox;
+        pp.z = objs[k].zmin_3d_bbox;
+        output_obj.convex_hull.polygon.points.push_back(pp);
+        pp.x = objs[k].xmin_3d_bbox;
+        pp.y = objs[k].ymax_3d_bbox;
+        pp.z = objs[k].zmin_3d_bbox;
+        output_obj.convex_hull.polygon.points.push_back(pp);
+        pp.x = objs[k].xmax_3d_bbox;
+        pp.y = objs[k].ymin_3d_bbox;
+        pp.z = objs[k].zmin_3d_bbox;
+        output_obj.convex_hull.polygon.points.push_back(pp);
+        pp.x = objs[k].xmax_3d_bbox;
+        pp.y = objs[k].ymax_3d_bbox;
+        pp.z = objs[k].zmin_3d_bbox;
+        output_obj.convex_hull.polygon.points.push_back(pp);
+        output_objs.objects.push_back(output_obj);
+    }
+    objs_pub.publish(output_objs);
+    objs_pub_rviz.publish(objs_marker);
 }
 
 void PixelCloudFusion::category_deal(visualization_msgs::Marker &objmarker, Object &obj)
@@ -316,8 +357,8 @@ void PixelCloudFusion::initROS()
 
     pub_fusion_cloud = nh.advertise<sensor_msgs::PointCloud2>(fusison_output_topic, 1);
     transformed_pointcloud = nh.advertise<sensor_msgs::PointCloud2>(transformed_cloud_topic, 1);
-    objs_pub = nh.advertise<visualization_msgs::MarkerArray>("objs", 1);
-    obj_pub = nh.advertise<visualization_msgs::Marker>("one_obj", 1);
+    objs_pub_rviz = nh.advertise<visualization_msgs::MarkerArray>("objs", 1);
+    objs_pub = nh.advertise<visualization_msgs::Marker>("one_obj", 1);
 }
 
 PixelCloudFusion::PixelCloudFusion() : nh_private("~"),

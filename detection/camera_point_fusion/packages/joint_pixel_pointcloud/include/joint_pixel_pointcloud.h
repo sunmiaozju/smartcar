@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-21 21:41:21
+ * @LastEditTime: 2019-02-21 21:58:42
+ */
 #ifndef NODE_JOINT_PIXEL_POINTCLOUD_H
 #define NODE_JOINT_PIXEL_POINTCLOUD_H
 
@@ -19,6 +27,8 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <yunle_sensor_msgs/DetectObject.h>
 #include <yunle_sensor_msgs/DetectObjs.h>
+#include <smartcar_msgs/DetectedObjectArray.h>
+#include <smartcar_msgs/DetectedObject.h>
 
 #include <opencv2/opencv.hpp>
 #include <pcl/PCLPointCloud2.h>
@@ -49,8 +59,8 @@ class PixelCloudFusion
   ros::Subscriber sub_cloud;
   ros::Subscriber sub_detection;
   ros::Publisher transformed_pointcloud;
+  ros::Publisher objs_pub_rviz;
   ros::Publisher objs_pub;
-  ros::Publisher obj_pub;
 
   std::vector<Object> objs;
 
@@ -80,6 +90,8 @@ class PixelCloudFusion
   void DetectionCallback(const yunle_sensor_msgs::DetectObjs &objs_msg);
 
   void initROS();
+
+  void publishObjs();
 
   tf::StampedTransform FindTransform(const std::string &target_frame, const std::string source_frame);
 
