@@ -4,10 +4,11 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-18 17:07:29
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-21 11:01:12
+ * @LastEditTime: 2019-02-25 15:23:55
  */
 
 #include <utils/utils.h>
+#include <utils/common.h>
 #include <float.h>
 
 namespace UtilityNS
@@ -17,8 +18,8 @@ namespace UtilityNS
  * @param {type} 
  * @return: 
  */
-int getNextClosePointIndex(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                           const PlannerHNS::WayPoint &curr_pos,
+int getNextClosePointIndex(const std::vector<UtilityNS::WayPoint> &trajectory,
+                           const UtilityNS::WayPoint &curr_pos,
                            const int &prevIndex)
 {
     if (trajectory.size() < 2 || prevIndex < 0)
@@ -40,12 +41,12 @@ int getNextClosePointIndex(const std::vector<PlannerHNS::WayPoint> &trajectory,
 
     if (min_index < (int)trajectory.size() - 2)
     {
-        PlannerHNS::GPSPoint closest, next;
+        UtilityNS::GPSPoint closest, next;
         closest = trajectory[min_index].pos;
         next = trajectory[min_index + 1].pos;
-        PlannerHNS::GPSPoint v_1(curr_pos.pos.x - closest.x, curr_pos.pos.y - closest.y, 0, 0);
+        UtilityNS::GPSPoint v_1(curr_pos.pos.x - closest.x, curr_pos.pos.y - closest.y, 0, 0);
         double length1 = calLength(v_1);
-        PlannerHNS::GPSPoint v_2(next.x - closest.x, next.y - closest.y, 0, 0);
+        UtilityNS::GPSPoint v_2(next.x - closest.x, next.y - closest.y, 0, 0);
         double length2 = calLength(v_2);
         double angle = cast_from_0_to_2PI_Angle(acos((v_1.x * v_2.x + v_1.y * v_2.y) / (length1 * length2)));
         if (angle <= M_PI_2)
@@ -58,7 +59,7 @@ int getNextClosePointIndex(const std::vector<PlannerHNS::WayPoint> &trajectory,
  * @param {type} 
  * @return: 
  */
-void visualLaneInRviz(const std::vector<PlannerHNS::WayPoint> &lane, ros::Publisher pub_testLane)
+void visualLaneInRviz(const std::vector<UtilityNS::WayPoint> &lane, ros::Publisher pub_testLane)
 {
     visualization_msgs::Marker lane_marker;
 
@@ -161,18 +162,18 @@ double diffBetweenTwoAngle(const double &a1, const double &a2)
  * @param {type} 
  * @return: 
  */
-bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                     const PlannerHNS::WayPoint &p,
-                     PlannerHNS::RelativeInfo &info)
+bool getRelativeInfo(const std::vector<UtilityNS::WayPoint> &trajectory,
+                     const UtilityNS::WayPoint &p,
+                     UtilityNS::RelativeInfo &info)
 {
     if (trajectory.size() < 2)
         return false;
 
-    PlannerHNS::WayPoint p0, p1;
+    UtilityNS::WayPoint p0, p1;
     if (trajectory.size() == 2)
     {
         p0 = trajectory[0];
-        p1 = PlannerHNS::WayPoint((p0.pos.x + trajectory[1].pos.x) / 2.0,
+        p1 = UtilityNS::WayPoint((p0.pos.x + trajectory[1].pos.x) / 2.0,
                                   (p0.pos.y + trajectory[1].pos.y) / 2.0,
                                   (p0.pos.z + trajectory[1].pos.z) / 2.0,
                                   p0.pos.a);
@@ -181,7 +182,7 @@ bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
     }
     else
     {
-        info.iFront = UtilityNS::getNextClosePointIndex(trajectory, p);
+        info.iFront = getNextClosePointIndex(trajectory, p);
 
         if (info.iFront > 0)
             info.iBack = info.iFront - 1;
@@ -201,18 +202,18 @@ bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
         else
         {
             p0 = trajectory[info.iFront - 1];
-            p1 = PlannerHNS::WayPoint((p0.pos.x + trajectory[info.iFront].pos.x) / 2.0,
+            p1 = UtilityNS::WayPoint((p0.pos.x + trajectory[info.iFront].pos.x) / 2.0,
                                       (p0.pos.y + trajectory[info.iFront].pos.y) / 2.0,
                                       (p0.pos.z + trajectory[info.iFront].pos.z) / 2.0,
                                       p0.pos.a);
         }
     }
 
-    PlannerHNS::WayPoint prevWP = p0;
-    PlannerHNS::Mat3 rotationMat(-p1.pos.a);
-    PlannerHNS::Mat3 translationMat(-p.pos.x, -p.pos.y);
-    PlannerHNS::Mat3 invRotationMat(p1.pos.a);
-    PlannerHNS::Mat3 invTranslationMat(p.pos.x, p.pos.y);
+    UtilityNS::WayPoint prevWP = p0;
+    UtilityNS::Mat3 rotationMat(-p1.pos.a);
+    UtilityNS::Mat3 translationMat(-p.pos.x, -p.pos.y);
+    UtilityNS::Mat3 invRotationMat(p1.pos.a);
+    UtilityNS::Mat3 invTranslationMat(p.pos.x, p.pos.y);
 
     p0.pos = translationMat * p0.pos;
     p0.pos = rotationMat * p0.pos;

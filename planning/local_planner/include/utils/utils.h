@@ -4,16 +4,16 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-18 17:07:52
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-25 13:25:29
+ * @LastEditTime: 2019-02-25 15:37:14
  */
 #ifndef LOCAL_PLANNER_UTILS_H
 #define LOCAL_PLANNER_UTILS_H
 
-#include <op_planner/RoadNetwork.h>
-#include "op_planner/MatrixOperations.h"
+#include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <ros/ros.h>
+
+#include <utils/common.h>
 
 namespace UtilityNS
 {
@@ -24,17 +24,24 @@ namespace UtilityNS
 #define DEG2RAD M_PI / 180.
 #define RAD2DEG 180. / M_PI
 
-int getNextClosePointIndex(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                           const PlannerHNS::WayPoint &curr_pos,
+int getNextClosePointIndex(const std::vector<UtilityNS::WayPoint> &trajectory,
+                           const UtilityNS::WayPoint &curr_pos,
                            const int &prevIndex = 0);
+
 double calDiffBetweenTwoAngle(const double &a1, const double &a2);
+
 double cast_from_0_to_2PI_Angle(const double &ang);
+
 double cast_from_PI_to_PI_Angle(const double &ang);
+
 double diffBetweenTwoAngle(const double &a1, const double &a2);
-void visualLaneInRviz(const std::vector<PlannerHNS::WayPoint> &lane, ros::Publisher pub_testLane);
-bool getRelativeInfo(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                     const PlannerHNS::WayPoint &p,
-                     PlannerHNS::RelativeInfo &info);
+
+void visualLaneInRviz(const std::vector<UtilityNS::WayPoint> &lane, ros::Publisher pub_testLane);
+
+bool getRelativeInfo(const std::vector<UtilityNS::WayPoint> &trajectory,
+                     const UtilityNS::WayPoint &p,
+                     UtilityNS::RelativeInfo &info);
+
 } // namespace UtilityNS
 
 #endif //LOCAL_PLANNER_UTILS_H

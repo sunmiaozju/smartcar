@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-25 14:32:37
+ * @LastEditTime: 2019-02-25 15:53:34
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -54,8 +54,7 @@ void RolloutGenerator::initROS()
 
     sub_currentPose = nh.subscribe("/current_pose", 10, &RolloutGenerator::getCurrentPose_cb, this);
     sub_globalPlannerPath = nh.subscribe("/lane_array", 1, &RolloutGenerator::getGlobalPlannerPath_cb, this);
-    VehicleStatus.speed = 1;
-    current_pose.v = 1;
+    speed = 1;
 }
 
 /**
@@ -79,10 +78,10 @@ void RolloutGenerator::run()
                                           PlanningParams.pathDensity, centralTrajectorySmoothed);
                 globalPathSections.push_back(centralTrajectorySmoothed);
             }
-            std::vector<PlannerHNS::WayPoint> sampled_points;
+            std::vector<UtilityNS::WayPoint> sampled_points;
             generateRunoffTrajectory(globalPathSections,
                                      current_pose,
-                                     VehicleStatus.speed,
+                                     speed,
                                      PlanningParams.microPlanDistance,
                                      PlanningParams.carTipMargin,
                                      PlanningParams.rollInMargin,
@@ -105,7 +104,6 @@ void RolloutGenerator::run()
                 for (size_t m = 0; m < rollOuts[k].size(); m++)
                 {
                     smartcar_msgs::Lane local_lane;
-                    predictTimeCostForTrajectory(rollOuts[k][m], current_pose, PlanningParams.minSpeed);
                     local_lane.waypoints.clear();
                     for (int h = 0; h < rollOuts[k][m].size(); h++)
                     {
@@ -152,8 +150,8 @@ void RolloutGenerator::run()
  * @param {type} 
  * @return: 
  */
-void RolloutGenerator::generateRunoffTrajectory(const std::vector<std::vector<PlannerHNS::WayPoint>> &referencePaths,
-                                                const PlannerHNS::WayPoint &carPos,
+void RolloutGenerator::generateRunoffTrajectory(const std::vector<std::vector<UtilityNS::WayPoint>> &referencePaths,
+                                                const UtilityNS::WayPoint &carPos,
                                                 const double &speed,
                                                 const double &microPlanDistance,
                                                 const double &carTipMargin,
@@ -165,8 +163,8 @@ void RolloutGenerator::generateRunoffTrajectory(const std::vector<std::vector<Pl
                                                 const double &SmoothDataWeight,
                                                 const double &SmoothWeight,
                                                 const double &SmoothTolerance,
-                                                std::vector<std::vector<std::vector<PlannerHNS::WayPoint>>> &rollOutsPaths,
-                                                std::vector<PlannerHNS::WayPoint> &sampledPoints_debug)
+                                                std::vector<std::vector<std::vector<UtilityNS::WayPoint>>> &rollOutsPaths,
+                                                std::vector<UtilityNS::WayPoint> &sampledPoints_debug)
 {
 
     if (referencePaths.size() == 0)
@@ -178,7 +176,7 @@ void RolloutGenerator::generateRunoffTrajectory(const std::vector<std::vector<Pl
 
     for (unsigned int i = 0; i < referencePaths.size(); i++)
     {
-        std::vector<std::vector<PlannerHNS::WayPoint>> local_rollOutPaths;
+        std::vector<std::vector<UtilityNS::WayPoint>> local_rollOutPaths;
         int s_index = 0, e_index = 0;
         std::vector<double> e_distances;
 
@@ -197,13 +195,13 @@ void RolloutGenerator::generateRunoffTrajectory(const std::vector<std::vector<Pl
  * @param {type} 
  * @return: 
  */
-void RolloutGenerator::calculateRollInTrajectories(const PlannerHNS::WayPoint &carPos,
+void RolloutGenerator::calculateRollInTrajectories(const UtilityNS::WayPoint &carPos,
                                                    const double &speed,
-                                                   const std::vector<PlannerHNS::WayPoint> &originalCenter,
+                                                   const std::vector<UtilityNS::WayPoint> &originalCenter,
                                                    int &start_index,
                                                    int &end_index,
                                                    std::vector<double> &end_laterals,
-                                                   std::vector<std::vector<PlannerHNS::WayPoint>> &rollInPaths,
+                                                   std::vector<std::vector<UtilityNS::WayPoint>> &rollInPaths,
                                                    const double &max_roll_distance,
                                                    const double &carTipMargin,
                                                    const double &rollInMargin,
@@ -214,16 +212,16 @@ void RolloutGenerator::calculateRollInTrajectories(const PlannerHNS::WayPoint &c
                                                    const double &SmoothDataWeight,
                                                    const double &SmoothWeight,
                                                    const double &SmoothTolerance,
-                                                   std::vector<PlannerHNS::WayPoint> &sampledPoints)
+                                                   std::vector<UtilityNS::WayPoint> &sampledPoints)
 {
-    PlannerHNS::WayPoint p;
+    UtilityNS::WayPoint p;
 
     int iLimitIndex = (carTipMargin / 0.3) / pathDensity;
     if (iLimitIndex >= originalCenter.size())
         iLimitIndex = originalCenter.size() - 1;
 
     //Get Closest Index
-    PlannerHNS::RelativeInfo info;
+    UtilityNS::RelativeInfo info;
     UtilityNS::getRelativeInfo(originalCenter, carPos, info);
 
     double remaining_distance = 0;
@@ -236,7 +234,7 @@ void RolloutGenerator::calculateRollInTrajectories(const PlannerHNS::WayPoint &c
 
     double initial_roll_in_distance = info.perp_distance; //GetPerpDistanceToTrajectorySimple(originalCenter, carPos, close_index);
 
-    std::vector<PlannerHNS::WayPoint> RollOutStratPath;
+    std::vector<UtilityNS::WayPoint> RollOutStratPath;
 
     //calculate the starting index
     double d_limit = 0;
@@ -307,13 +305,13 @@ void RolloutGenerator::calculateRollInTrajectories(const PlannerHNS::WayPoint &c
     {
         double diff = end_laterals.at(i) - initial_roll_in_distance;
         inc_list.push_back(diff / (double)nSteps);
-        rollInPaths.push_back(std::vector<PlannerHNS::WayPoint>());
+        rollInPaths.push_back(std::vector<UtilityNS::WayPoint>());
         inc_list_inc.push_back(0);
     }
 
-    std::vector<std::vector<PlannerHNS::WayPoint>> execluded_from_smoothing;
+    std::vector<std::vector<UtilityNS::WayPoint>> execluded_from_smoothing;
     for (unsigned int i = 0; i < rollOutNumber + 1; i++)
-        execluded_from_smoothing.push_back(std::vector<PlannerHNS::WayPoint>());
+        execluded_from_smoothing.push_back(std::vector<UtilityNS::WayPoint>());
 
     //Insert First strait points within the tip of the car range
     for (unsigned int j = start_index; j < smoothing_start_index; j++)
@@ -422,14 +420,14 @@ void RolloutGenerator::calculateRollInTrajectories(const PlannerHNS::WayPoint &c
  * @param {type} 
  * @return: 
  */
-void RolloutGenerator::smoothPath(std::vector<PlannerHNS::WayPoint> &path, double weight_data,
+void RolloutGenerator::smoothPath(std::vector<UtilityNS::WayPoint> &path, double weight_data,
                                   double weight_smooth, double tolerance)
 {
     if (path.size() <= 2)
         return;
 
-    const std::vector<PlannerHNS::WayPoint> &path_in = path;
-    std::vector<PlannerHNS::WayPoint> smoothPath_out = path_in;
+    const std::vector<UtilityNS::WayPoint> &path_in = path;
+    std::vector<UtilityNS::WayPoint> smoothPath_out = path_in;
 
     double change = tolerance;
     double xtemp, ytemp;
@@ -464,7 +462,7 @@ void RolloutGenerator::smoothPath(std::vector<PlannerHNS::WayPoint> &path, doubl
  * @param {type} 
  * @return: 
  */
-void RolloutGenerator::visualInRviz(std::vector<PlannerHNS::WayPoint> test_points)
+void RolloutGenerator::visualInRviz(std::vector<UtilityNS::WayPoint> test_points)
 {
     pub_test = nh.advertise<visualization_msgs::MarkerArray>("test_points", 1);
     visualization_msgs::MarkerArray test_markers;
@@ -499,7 +497,7 @@ void RolloutGenerator::visualInRviz(std::vector<PlannerHNS::WayPoint> test_point
     pub_test.publish(test_markers);
 }
 
-void RolloutGenerator::trajectoryToMarkers(const std::vector<std::vector<std::vector<PlannerHNS::WayPoint>>> &paths, visualization_msgs::MarkerArray &markerArray)
+void RolloutGenerator::trajectoryToMarkers(const std::vector<std::vector<std::vector<UtilityNS::WayPoint>>> &paths, visualization_msgs::MarkerArray &markerArray)
 {
     visualization_msgs::Marker lane_waypoint_marker;
     lane_waypoint_marker.header.frame_id = "map";
@@ -534,36 +532,11 @@ void RolloutGenerator::trajectoryToMarkers(const std::vector<std::vector<std::ve
     }
 }
 
-void RolloutGenerator::predictTimeCostForTrajectory(std::vector<PlannerHNS::WayPoint> &path, const PlannerHNS::WayPoint &p, const double &minSpeed)
-{
-    if (path.size() == 0)
-        return;
-    if (p.v == 0 || p.v < minSpeed)
-        return;
-
-    for (size_t i = 0; i < path.size(); i++)
-        path[i].timeCost = -1;
-
-    int closeFrontIndex = UtilityNS::getNextClosePointIndex(path, p);
-    double total_distance = 0;
-
-    path[closeFrontIndex].timeCost = 0;
-    if (closeFrontIndex == 0)
-        closeFrontIndex++;
-
-    for (size_t k = closeFrontIndex; k < path.size(); k++)
-    {
-        total_distance += hypot(path[k].pos.x - path[k - 1].pos.x,
-                                path[k].pos.y - path[k - 1].pos.y);
-        path[k].timeCost = total_distance / p.v;
-    }
-}
-
-void RolloutGenerator::extractPartFromTrajectory(const std::vector<PlannerHNS::WayPoint> &originalPath,
-                                                 const PlannerHNS::WayPoint &currentPos,
+void RolloutGenerator::extractPartFromTrajectory(const std::vector<UtilityNS::WayPoint> &originalPath,
+                                                 const UtilityNS::WayPoint &currentPos,
                                                  const double &minDistance,
                                                  const double &waypointDensity,
-                                                 std::vector<PlannerHNS::WayPoint> &extractedPath)
+                                                 std::vector<UtilityNS::WayPoint> &extractedPath)
 {
     if (originalPath.size() < 2)
         return;
@@ -604,7 +577,7 @@ void RolloutGenerator::extractPartFromTrajectory(const std::vector<PlannerHNS::W
     calcAngleAndCost(extractedPath);
 }
 
-void RolloutGenerator::fixPathDensity(std::vector<PlannerHNS::WayPoint> &path, const double &pathDensity)
+void RolloutGenerator::fixPathDensity(std::vector<UtilityNS::WayPoint> &path, const double &pathDensity)
 {
     if (path.size() == 0 || pathDensity == 0)
         return;
@@ -612,7 +585,7 @@ void RolloutGenerator::fixPathDensity(std::vector<PlannerHNS::WayPoint> &path, c
     double margin = pathDensity * 0.01;
     double remaining = 0;
     int nPoints = 0;
-    std::vector<PlannerHNS::WayPoint> fixedPath;
+    std::vector<UtilityNS::WayPoint> fixedPath;
     fixedPath.push_back(path[0]);
     size_t start = 0, next = 1;
     while (next < path.size())
@@ -627,7 +600,7 @@ void RolloutGenerator::fixPathDensity(std::vector<PlannerHNS::WayPoint> &path, c
         }
         else if (dis > (pathDensity + margin))
         {
-            PlannerHNS::WayPoint point_start = path[start];
+            UtilityNS::WayPoint point_start = path[start];
             nPoints = dis / pathDensity;
             for (int j = 0; j < nPoints; j++)
             {
@@ -655,7 +628,7 @@ void RolloutGenerator::fixPathDensity(std::vector<PlannerHNS::WayPoint> &path, c
 
 void RolloutGenerator::getCurrentPose_cb(const geometry_msgs::PoseStampedConstPtr &msg)
 {
-    current_pose = PlannerHNS::WayPoint(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z, tf::getYaw(msg->pose.orientation));
+    current_pose = UtilityNS::WayPoint(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z, tf::getYaw(msg->pose.orientation));
     currentPose_flag = true;
 }
 
@@ -664,7 +637,7 @@ void RolloutGenerator::getGlobalPlannerPath_cb(const smartcar_msgs::LaneArrayCon
     if (msg->lanes.size() > 0)
     {
         globalPaths.clear();
-        std::vector<PlannerHNS::WayPoint> single_path;
+        std::vector<UtilityNS::WayPoint> single_path;
         for (size_t i = 0; i < msg->lanes.size(); i++)
         {
             msgLane2LocalLane(msg->lanes[i], single_path);
@@ -674,12 +647,12 @@ void RolloutGenerator::getGlobalPlannerPath_cb(const smartcar_msgs::LaneArrayCon
     }
 }
 
-void RolloutGenerator::msgLane2LocalLane(const smartcar_msgs::Lane &msg_path, std::vector<PlannerHNS::WayPoint> &path)
+void RolloutGenerator::msgLane2LocalLane(const smartcar_msgs::Lane &msg_path, std::vector<UtilityNS::WayPoint> &path)
 {
     path.clear();
     for (size_t i = 0; i < msg_path.waypoints.size(); i++)
     {
-        PlannerHNS::WayPoint wp;
+        UtilityNS::WayPoint wp;
         wp.pos.x = msg_path.waypoints.at(i).pose.pose.position.x;
         wp.pos.y = msg_path.waypoints.at(i).pose.pose.position.y;
         wp.pos.z = msg_path.waypoints.at(i).pose.pose.position.z;
@@ -690,7 +663,7 @@ void RolloutGenerator::msgLane2LocalLane(const smartcar_msgs::Lane &msg_path, st
     }
 }
 
-double RolloutGenerator::calcAngleAndCost(std::vector<PlannerHNS::WayPoint> &path)
+double RolloutGenerator::calcAngleAndCost(std::vector<UtilityNS::WayPoint> &path)
 {
     if (path.size() < 2)
         return 0;

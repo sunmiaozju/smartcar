@@ -11,8 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     smartcar_msgs
     sensor_msgs
-    op_planner
-    op_utility
     vector_map_msgs
     tf
 )
@@ -25,8 +23,6 @@ catkin_package(
         std_msgs
         smartcar_msgs
         geometry_msgs
-        op_planner
-        op_utility
 )
 
 include_directories(

@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-25 13:44:37
+ * @LastEditTime: 2019-02-25 15:56:59
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -17,7 +17,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
     pre_best_index = -1;
 
     // for test
-    PlannerHNS::DetectedObject obj;
+    UtilityNS::DetectedObject obj;
     obj.l = 1;
     obj.w = 1;
     obj.h = 1;
@@ -27,7 +27,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
     obj.center.pos.z = 0;
     obj.center.v = 0;
 
-    PlannerHNS::GPSPoint p;
+    UtilityNS::GPSPoint p;
     obj.contour.clear();
 
     p.x = obj.center.pos.x - 0.5;
@@ -86,7 +86,7 @@ void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::Detect
     detect_objs.clear();
     for (int i = 0; i < msg->objects.size(); i++)
     {
-        PlannerHNS::DetectedObject obj;
+        UtilityNS::DetectedObject obj;
         obj.id = msg->objects[i].id;
         obj.label = msg->objects[i].label;
         obj.l = msg->objects[i].dimensions.x;
@@ -99,7 +99,7 @@ void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::Detect
         obj.center.pos.a = tf::getYaw(msg->objects[i].pose.orientation);
         obj.center.v = msg->objects[i].velocity.linear.x;
 
-        PlannerHNS::GPSPoint p;
+        UtilityNS::GPSPoint p;
         obj.contour.clear();
         for (int k = 0; k < msg->objects[i].convex_hull.polygon.points.size(); k++)
         {
@@ -123,10 +123,10 @@ void LocalTrajectoryGenerator::getRolloutPaths_cb(const smartcar_msgs::LaneArray
         generated_rollouts.clear();
         for (size_t i = 0; i < msg->lanes.size(); i++)
         {
-            std::vector<PlannerHNS::WayPoint> rollout_singleLane;
+            std::vector<UtilityNS::WayPoint> rollout_singleLane;
             for (size_t k = 0; k < msg->lanes[i].waypoints.size(); k++)
             {
-                PlannerHNS::WayPoint wp;
+                UtilityNS::WayPoint wp;
                 wp.pos.x = msg->lanes[i].waypoints[k].pose.pose.position.x;
                 wp.pos.y = msg->lanes[i].waypoints[k].pose.pose.position.y;
                 wp.pos.z = msg->lanes[i].waypoints[k].pose.pose.position.z;
@@ -147,7 +147,7 @@ void LocalTrajectoryGenerator::getCentralPathSection_cb(const smartcar_msgs::Lan
     centralPathSection.clear();
     for (int i = 0; i < msg->waypoints.size(); i++)
     {
-        PlannerHNS::WayPoint p;
+        UtilityNS::WayPoint p;
         p.pos.x = msg->waypoints[i].pose.pose.position.x;
         p.pos.y = msg->waypoints[i].pose.pose.position.y;
         p.pos.z = msg->waypoints[i].pose.pose.position.z;
@@ -162,7 +162,7 @@ void LocalTrajectoryGenerator::getCentralPathSection_cb(const smartcar_msgs::Lan
  */
 void LocalTrajectoryGenerator::getCurrentPose_cb(const geometry_msgs::PoseStampedConstPtr &msg)
 {
-    current_pose = PlannerHNS::WayPoint(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z, tf::getYaw(msg->pose.orientation));
+    current_pose = UtilityNS::WayPoint(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z, tf::getYaw(msg->pose.orientation));
     currentPose_flag = true;
 }
 /**
@@ -176,7 +176,7 @@ void LocalTrajectoryGenerator::run()
     while (ros::ok())
     {
         ros::spinOnce();
-        PlannerHNS::TrajectoryCost best_trajectory;
+        UtilityNS::TrajectoryCost best_trajectory;
         if (currentPose_flag && centralPathSection.size() > 0)
         {
             best_trajectory = trajectory_evaluator_static(generated_rollouts, centralPathSection, current_pose, plan_params, car_info, detect_objs);
@@ -292,21 +292,21 @@ void LocalTrajectoryGenerator::visualInRviz()
  * @param {type} 
  * @return: 
  */
-PlannerHNS::TrajectoryCost LocalTrajectoryGenerator::trajectory_evaluator_static(const std::vector<std::vector<PlannerHNS::WayPoint>> &rollouts,
-                                                                                 const std::vector<PlannerHNS::WayPoint> &centralPath,
-                                                                                 const PlannerHNS::WayPoint &currPose,
-                                                                                 const PlannerHNS::PlanningParams &params,
-                                                                                 const PlannerHNS::CAR_BASIC_INFO &car_info,
-                                                                                 const std::vector<PlannerHNS::DetectedObject> &obj_list)
+UtilityNS::TrajectoryCost LocalTrajectoryGenerator::trajectory_evaluator_static(const std::vector<std::vector<UtilityNS::WayPoint>> &rollouts,
+                                                                                 const std::vector<UtilityNS::WayPoint> &centralPath,
+                                                                                 const UtilityNS::WayPoint &currPose,
+                                                                                 const UtilityNS::PlanningParams &params,
+                                                                                 const UtilityNS::CAR_BASIC_INFO &car_info,
+                                                                                 const std::vector<UtilityNS::DetectedObject> &obj_list)
 {
-    PlannerHNS::TrajectoryCost best_trajectory;
+    UtilityNS::TrajectoryCost best_trajectory;
     best_trajectory.bBlocked = true;
     best_trajectory.closest_obj_distance = params.horizonDistance;
     best_trajectory.closest_obj_velocity = 0;
     best_trajectory.index = -1;
 
     // cal current trajectory where running
-    PlannerHNS::RelativeInfo car_relativeInfo;
+    UtilityNS::RelativeInfo car_relativeInfo;
     UtilityNS::getRelativeInfo(centralPath, currPose, car_relativeInfo);
 
     int currIndex = params.rollOutNumber / 2 + floor(car_relativeInfo.perp_distance / params.rollOutDensity);
@@ -319,7 +319,7 @@ PlannerHNS::TrajectoryCost LocalTrajectoryGenerator::trajectory_evaluator_static
     trajectoryCosts.clear();
     if (rollouts.size() > 0)
     {
-        PlannerHNS::TrajectoryCost tc;
+        UtilityNS::TrajectoryCost tc;
         for (int i = 0; i < rollouts.size(); i++)
         {
             tc.index = i;
@@ -338,7 +338,7 @@ PlannerHNS::TrajectoryCost LocalTrajectoryGenerator::trajectory_evaluator_static
 
     if (obj_list.size() > 0)
     {
-        PlannerHNS::WayPoint obj_p;
+        UtilityNS::WayPoint obj_p;
         allContourPoints.clear();
         for (int kk = 0; kk < obj_list.size(); kk++)
         {
@@ -346,7 +346,7 @@ PlannerHNS::TrajectoryCost LocalTrajectoryGenerator::trajectory_evaluator_static
             {
                 obj_p.pos = obj_list[kk].contour[m];
                 obj_p.v = obj_list[kk].center.v;
-                obj_p.id = kk;
+                obj_p.laneId = kk;
                 allContourPoints.push_back(obj_p);
             }
         }
@@ -401,7 +401,7 @@ PlannerHNS::TrajectoryCost LocalTrajectoryGenerator::trajectory_evaluator_static
  * @param {type} 
  * @return: 
  */
-void LocalTrajectoryGenerator::normalizeCosts(std::vector<PlannerHNS::TrajectoryCost> &trajectory_cost)
+void LocalTrajectoryGenerator::normalizeCosts(std::vector<UtilityNS::TrajectoryCost> &trajectory_cost)
 {
     double totalPriorities = 0;
     double totalLateralCosts = 0;
@@ -464,25 +464,25 @@ void LocalTrajectoryGenerator::normalizeCosts(std::vector<PlannerHNS::Trajectory
  * @param {type} 
  * @return: 
  */
-void LocalTrajectoryGenerator::calLateralAndLongitudinalCostsStatic(std::vector<PlannerHNS::TrajectoryCost> &trajectoryCosts,
-                                                                    const std::vector<std::vector<PlannerHNS::WayPoint>> &rollOuts,
-                                                                    const std::vector<PlannerHNS::WayPoint> &centerPath,
-                                                                    const PlannerHNS::WayPoint &currPose,
-                                                                    const std::vector<PlannerHNS::WayPoint> &contourPoints,
-                                                                    const PlannerHNS::PlanningParams &params,
-                                                                    const PlannerHNS::CAR_BASIC_INFO &carInfo)
+void LocalTrajectoryGenerator::calLateralAndLongitudinalCostsStatic(std::vector<UtilityNS::TrajectoryCost> &trajectoryCosts,
+                                                                    const std::vector<std::vector<UtilityNS::WayPoint>> &rollOuts,
+                                                                    const std::vector<UtilityNS::WayPoint> &centerPath,
+                                                                    const UtilityNS::WayPoint &currPose,
+                                                                    const std::vector<UtilityNS::WayPoint> &contourPoints,
+                                                                    const UtilityNS::PlanningParams &params,
+                                                                    const UtilityNS::CAR_BASIC_INFO &carInfo)
 {
     double critical_lateral_distance = carInfo.width / 2.0 + params.horizontalSafetyDistancel;
     double critical_long_front_distance = carInfo.wheel_base / 2.0 + carInfo.length / 2.0 + params.verticalSafetyDistance;
     double critical_long_back_distance = carInfo.length / 2.0 - carInfo.wheel_base / 2.0 + params.verticalSafetyDistance;
 
-    PlannerHNS::GPSPoint bottom_left(-critical_lateral_distance, -critical_long_back_distance, currPose.pos.z, 0);
-    PlannerHNS::GPSPoint bottom_right(critical_lateral_distance, -critical_long_back_distance, currPose.pos.z, 0);
-    PlannerHNS::GPSPoint top_left(-critical_lateral_distance, critical_long_front_distance, currPose.pos.z, 0);
-    PlannerHNS::GPSPoint top_right(critical_lateral_distance, critical_long_front_distance, currPose.pos.z, 0);
+    UtilityNS::GPSPoint bottom_left(-critical_lateral_distance, -critical_long_back_distance, currPose.pos.z, 0);
+    UtilityNS::GPSPoint bottom_right(critical_lateral_distance, -critical_long_back_distance, currPose.pos.z, 0);
+    UtilityNS::GPSPoint top_left(-critical_lateral_distance, critical_long_front_distance, currPose.pos.z, 0);
+    UtilityNS::GPSPoint top_right(critical_lateral_distance, critical_long_front_distance, currPose.pos.z, 0);
 
-    PlannerHNS::Mat3 invRoatationMat(currPose.pos.a);
-    PlannerHNS::Mat3 invTranslationMat(currPose.pos.x, currPose.pos.y);
+    UtilityNS::Mat3 invRoatationMat(currPose.pos.a);
+    UtilityNS::Mat3 invTranslationMat(currPose.pos.x, currPose.pos.y);
 
     bottom_left = invRoatationMat * bottom_left;
     bottom_left = invTranslationMat * bottom_left;
@@ -498,14 +498,14 @@ void LocalTrajectoryGenerator::calLateralAndLongitudinalCostsStatic(std::vector<
     double lateralDist;
     if (rollOuts.size() > 0 && rollOuts[0].size() > 0)
     {
-        PlannerHNS::RelativeInfo car_rela_info;
+        UtilityNS::RelativeInfo car_rela_info;
         UtilityNS::getRelativeInfo(centerPath, currPose, car_rela_info);
         UtilityNS::visualLaneInRviz(centerPath, pub_testLane);
         for (int i = 0; i < rollOuts.size(); i++)
         {
             for (int k = 0; k < contourPoints.size(); k++)
             {
-                PlannerHNS::RelativeInfo contour_rela_info;
+                UtilityNS::RelativeInfo contour_rela_info;
 
                 UtilityNS::getRelativeInfo(centerPath, contourPoints[k], contour_rela_info);
 
@@ -539,9 +539,9 @@ void LocalTrajectoryGenerator::calLateralAndLongitudinalCostsStatic(std::vector<
  * @param {type} 
  * @return: 
  */
-double LocalTrajectoryGenerator::getTwoPointsDistanceAlongTrajectory(const std::vector<PlannerHNS::WayPoint> &trajectory,
-                                                                     const PlannerHNS::RelativeInfo &p1,
-                                                                     const PlannerHNS::RelativeInfo &p2)
+double LocalTrajectoryGenerator::getTwoPointsDistanceAlongTrajectory(const std::vector<UtilityNS::WayPoint> &trajectory,
+                                                                     const UtilityNS::RelativeInfo &p1,
+                                                                     const UtilityNS::RelativeInfo &p2)
 {
     if (trajectory.size() == 0)
         return 0;
