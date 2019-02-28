@@ -1,0 +1,31 @@
+<launch>
+    <include file="$(find common)/launch/static_tf.launch" />
+    <include file="$(find lslidar_c16_decoder)/launch/lslidar_c16.launch" />
+    <include file="$(find hall_sensor)/launch/hall_sensor.launch" />
+    <include file="$(find imu_driver)/launch/imu_driver.launch" />
+
+    <include file="$(find xrobot_imu_bridge)/launch/imu_ahrs.launch" />
+    <include file="$(find odom_imu)/launch/odom_imu.launch" />
+
+    <!-- <include file="$(find ndt_localization)/launch/test_ndt.launch" /> -->
+    <node pkg="static_map" type="static_map_node" name="static_map_node">
+        <param name="pcd_file" value="$(find static_map)/map_file/map_1008_cluster.pcd" />
+        <param name="map_frame" value="map" />
+        <param name="duration" value="1.0" />
+        <remap from="/static_map" to="/map/point_cloud" />
+    </node>
+
+    <include file="$(find lidar_euclidean_cluster_detect)/launch/lidar_euclidean_cluster_detect.launch">
+        <arg name="output_frame" value="/laser" />
+        <arg name="points_node" value="/lslidar_point_cloud" />
+        <arg name="use_gpu" value="true" />
+    </include>
+    
+    <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
+        <rosparam file="$(find ndt_localization)/params/test.yaml" />
+        <!-- <remap from="/odom/imu" to="/imu/odom" /> -->
+        <!-- <remap from="/map/point_cloud" to="cloud_pcd" /> -->
+        <remap from="/lslidar_point_cloud" to="/points_cluster" />
+    </node>
+
+</launch>

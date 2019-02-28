@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-28 22:03:11
+ * @LastEditTime: 2019-02-28 22:03:15
+ */
 #ifndef __NDT_LOCALZATION__
 #define __NDT_LOCALZATION__
 
@@ -8,6 +16,7 @@
 #include <sensor_msgs/PointCloud2.h>
 // #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <visualization_msgs/Marker.h>
@@ -23,6 +32,9 @@
 #include <boost/thread/thread.hpp>
 #include <pthread.h>
 #include <chrono>
+
+#include <std_msgs/Float32.h>
+#include <std_msgs/Int16.h>
 
 #include <ndt_gpu/NormalDistributionsTransform.h>
 #include <pcl_omp_registration/ndt.h>
@@ -69,6 +81,12 @@ private:
   ros::Publisher pub_marker_loc_conf_;
   ros::Publisher pub_marker_trans_prob_;
 
+  // publish time-used of ndt
+  ros::Publisher pub_ndt_time;
+  ros::Publisher pub_ndt_iterations;
+  
+  ros::Publisher pub_target_map;
+
   ros::Subscriber sub_odom_;
   nav_msgs::Odometry::ConstPtr msg_odom_; // under odom frame
   ros::Subscriber sub_map_;
@@ -80,6 +98,11 @@ private:
   PointCloudT data_pc_;  // 定义要加载的全局地图
   PointCloudT::Ptr target_map_ptr;
   PointCloudT target_map;
+
+  // publish debug_path
+  nav_msgs::Path debug_path;
+  ros::Publisher pub_path;
+  double length_update_path;
 
   double param_min_scan_range;
   double param_max_scan_range;
@@ -152,6 +175,10 @@ private:
   ros::Publisher pub_rawodom_;
   nav_msgs::Odometry msg_rawodom_;
 
+  std::string map_file;
+
+  bool load_map(std::string map_file);
+
   /**
    * @brief Save motion data to get a rough pose estimation to give NDT-matching a initial transformation matrix.
    * 
@@ -192,6 +219,8 @@ private:
   bool param_init_pose_with_param;
 
   void update_target_map();
+
+  void pub_debug_path();
 };
 
 #endif

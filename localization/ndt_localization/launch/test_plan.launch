@@ -1,0 +1,11 @@
+<launch>
+    <include file="$(find common)/launch/static_tf.launch" />
+    <include file="$(find lslidar_c16_decoder)/launch/lslidar_c16.launch" />
+    <include file="$(find hall_sensor)/launch/hall_sensor.launch" />
+    <include file="$(find imu_driver)/launch/imu_driver.launch" />
+    <include file="$(find xrobot_imu_bridge)/launch/imu_ahrs.launch" />
+
+    <include file="$(find ndt_localization)/launch/test_ndt.launch" />
+    <node pkg="map_server" type="map_server" name="gridmap_server" args="$(find static_map)/map_file/gridmap_1008.yaml">
+    </node>
+</launch>

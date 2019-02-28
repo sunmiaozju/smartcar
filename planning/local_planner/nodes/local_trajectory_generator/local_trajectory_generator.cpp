@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-26 14:25:38
+ * @LastEditTime: 2019-02-28 22:07:45
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -48,6 +48,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
     obj.contour.push_back(p);
     detect_objs.push_back(obj);
 }
+
 void LocalTrajectoryGenerator::initROS()
 {
     sub_currentPose = nh.subscribe("current_pose", 1, &LocalTrajectoryGenerator::getCurrentPose_cb, this);

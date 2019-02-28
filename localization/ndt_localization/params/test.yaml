@@ -46,10 +46,17 @@ init_roll: 0.0
 init_pitch: 0.0
 init_yaw: 0.0
 
-# 点云预处理： 根据半径过滤
+# 以下: 对于智泉大楼室外场景,使用参数 1/30  3/50效果比较好
+# 以下: 对于则通楼周边,使用参数
+
+# 点云预处理： 根据半径过滤   
 min_scan_range: 1.0  
-max_scan_range: 30
+max_scan_range: 90
 
 # 更新局部匹配地图相关参数
 length_update_target_map: 3.0  # 定义更新target地图所需要距离
-target_map_radius: 50  # 与扫描到的点云尽心scan半径滤波的半径有关，比scan过滤的半径要大
+target_map_radius: 100  # 与扫描到的点云尽心scan半径滤波的半径有关，比scan过滤的半径要大
+
+# global_map_file: 在launch文件中设置
+
+length_update_path: 0.3

@@ -11,7 +11,11 @@ if (CUDA_FOUND)
 	include_directories(${CUDA_INCLUDE_DIRS})
 endif ()
 include_directories(include)
-link_directories(lib)
+
+
+string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
+link_directories(${LIBRARY_DIRS})  # 可以将libgpu_ndt.so加到这个路径里，然后就可以链接到了
+
 find_package(Eigen3 REQUIRED)
 # find_package(OpenCV REQUIRED)
 

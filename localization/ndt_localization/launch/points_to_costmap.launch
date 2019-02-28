@@ -1,0 +1,18 @@
+<launch>
+    <node pkg="static_map" type="static_map_node" name="static_map_node">
+        <param name="pcd_file" value="$(find static_map)/map_file/map_1010_cluster_filtered.pcd" />
+        <param name="map_frame" value="map" />
+        <param name="duration" value="1.0" />
+        <remap from="/static_map" to="/map/point_cloud" />
+    </node>
+    <include file="$(find obj_map)/launch/points2costmap.launch">
+        <arg name="map_width" default="80" />
+        <arg name="map_height" default="85" />
+        <arg name="points_topic" default="/map/point_cloud" />
+        <arg name="offset_x" default="12.0" />
+        <arg name="offset_y" default="20.0" />
+        <arg name="offset_z" default="-2.0" />
+        <arg name="height_limit" default="3.0" />
+
+    </include>
+</launch>

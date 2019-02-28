@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-28 22:12:54
+ * @LastEditTime: 2019-02-28 22:12:55
+ */
 #ifndef GMATRIX_H_
 #define GMATRIX_H_
 

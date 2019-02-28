@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-28 22:11:33
+ * @LastEditTime: 2019-02-28 22:11:33
+ */
 #ifndef GPU_OCTREE_H_
 #define GPU_OCTREE_H_
 

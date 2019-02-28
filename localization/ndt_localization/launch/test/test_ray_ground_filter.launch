@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="points_preprocessor" type="ray_ground_filter" name="ray_ground_filter">
+    <remap from="/points_raw" to="/lslidar_point_cloud" />
+  </node>
+</launch>

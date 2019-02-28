@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: sunm
+ * @Github: https://github.com/sunmiaozju
+ * @LastEditors: sunm
+ * @Date: 2019-02-28 19:48:06
+ * @LastEditTime: 2019-02-28 22:12:55
+ */
 #ifndef GDEBUG_H_
 #define GDEBUG_H_
 

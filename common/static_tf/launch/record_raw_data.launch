@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find common)/launch/static_tf.launch" />
+  <include file="$(find lslidar_c16_decoder)/launch/lslidar_c16.launch" />
+  <include file="$(find imu_f)/launch/odom.launch" />
+
+</launch>

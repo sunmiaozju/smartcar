@@ -30,6 +30,8 @@ add_message_files(
         TrafficLight.msg
         TrafficLightResultArray.msg
         ImageLaneObjects.msg
+
+
 )
 
 generate_messages(

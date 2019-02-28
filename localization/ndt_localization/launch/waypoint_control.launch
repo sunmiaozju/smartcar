@@ -1,0 +1,33 @@
+<launch>
+
+	<node pkg="ta_lab6" type="path_planner.py" name="Trajectory_search">
+		<param name="save_trajectory" value="0"/>
+		<param name="save_path" value="$(find ta_lab6)/trajectories/waypoint/"/>
+		<param name="publish" value="1"/>
+		<param name="trajectory_topic" value="/trajectory/current"/>
+
+		<param name="odom_topic" value="/odom/imu"/>
+		
+		<param name="show_exploration_buffer" value="1"/>
+		<!-- These params are for the circle search -->
+		<param name="branch_factor" value="31"/> <!-- number of neighbors to expand per node -->
+		<param name="soft_min_radius" value="0.8"/>
+		<param name="soft_min_penalty" value="1.7"/> <!-- Circles below soft_min_radius are penalized by this factor -->
+		<param name="hard_min_radius" value="0.3"/>
+		<param name="heuristic_bias" value="1.9"/> <!-- epsilon-admissible coefficient -->
+		<param name="min_goal_overlap" value="0.05"/>
+		<param name="minimum_turn_radius" value="0.3"/> <!-- defines bounds on exploration -->
+		<param name="exploration_timeout" value="6.0"/>
+		<param name="exploration_coeff" value="0.75"/>
+
+		<!-- These params are for second level A* search -->
+		<param name="refine_trajectory" value="1"/>
+		<param name="fp_branch_factor" value="121"/>
+		<param name="fp_heuristic_bias" value="1.2"/> <!-- epsilon-admissible coefficient -->
+		<param name="fp_soft_min_penalty" value="2.0"/>
+		<param name="fp_exploration_coeff" value="0.2"/>
+		<param name="refining_timeout" value="13.0"/>
+		<param name="fp_minimum_turn_radius" value="0.4"/> <!-- defines bounds on exploration -->
+		<param name="fp_max_circle_radius" value="1.1"/>
+	</node>
+</launch>

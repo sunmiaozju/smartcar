@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="cv_camera" type="cv_camera_node" name="cv_camera">
+		<param name="device_id" value="2" />
+	</node>
+</launch>
