@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-25 15:53:34
+ * @LastEditTime: 2019-02-26 16:23:02
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -531,7 +531,11 @@ void RolloutGenerator::trajectoryToMarkers(const std::vector<std::vector<std::ve
         }
     }
 }
-
+/**
+ * @description: 从全局路径截取最大局部规划距离 
+ * @param {type} 
+ * @return: 
+ */
 void RolloutGenerator::extractPartFromTrajectory(const std::vector<UtilityNS::WayPoint> &originalPath,
                                                  const UtilityNS::WayPoint &currentPos,
                                                  const double &minDistance,

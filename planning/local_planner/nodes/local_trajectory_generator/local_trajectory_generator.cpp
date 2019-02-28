@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-25 15:56:59
+ * @LastEditTime: 2019-02-26 14:25:38
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -22,7 +22,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
     obj.w = 1;
     obj.h = 1;
 
-    obj.center.pos.x = 20;
+    obj.center.pos.x = 18.5;
     obj.center.pos.y = 27;
     obj.center.pos.z = 0;
     obj.center.v = 0;
