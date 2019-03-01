@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="lidar_detector" type="lidar_euclidean_cluster_node" name="lidar_euclidean_cluster_node" output="screen">
+    </node>
+</launch>
