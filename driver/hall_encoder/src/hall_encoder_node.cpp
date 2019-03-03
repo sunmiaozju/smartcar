@@ -1,11 +1,3 @@
-/*
- * @Description: 
- * @Author: sunm
- * @Github: https://github.com/sunmiaozju
- * @LastEditors: sunm
- * @Date: 2019-02-28 21:34:42
- * @LastEditTime: 2019-02-28 21:35:39
- */
 #include "hall_encoder_node.h"
 #include <ros/ros.h>
 

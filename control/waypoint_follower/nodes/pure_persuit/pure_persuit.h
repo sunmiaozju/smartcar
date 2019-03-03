@@ -76,7 +76,7 @@ class PurePursuitNode
 
     void callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr &msg);
 
-    void callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr &msg);
+    void callbackFromWayPoints(const nav_msgs::PathConstPtr &msg);
 
     // initializer
     void initForROS();

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(calibration_camera_lidar)
 set(ROS_VERSION $ENV{ROS_DISTRO})
-
+add_compile_options(-std=c++11)
 include(FindPkgConfig)
 include(FindLibXml2 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS

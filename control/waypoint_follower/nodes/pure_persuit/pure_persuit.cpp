@@ -47,12 +47,12 @@ void PurePursuitNode::initForROS()
     private_nh_.param("is_const_speed_command_", is_const_speed_command_, true);
 
     // setup subscriber
-    sub_lane = nh_.subscribe("lane_array", 10, &PurePursuitNode::callbackFromWayPoints, this);
+    sub_lane = nh_.subscribe("global_path", 10, &PurePursuitNode::callbackFromWayPoints, this);
     sub_currentpose = nh_.subscribe("current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
     sub_speed = nh_.subscribe("ndt_speed", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
 
     // setup publisher
-    pub_ctl = nh_.advertise<geometry_msgs::TwistStamped>("ctrl_cmd", 10);
+    pub_ctl = nh_.advertise<geometry_msgs::Twist>("ctrl_cmd", 10);
     pub_target = nh_.advertise<visualization_msgs::MarkerArray>("target_waypoint", 10);
     pub_path = nh_.advertise<nav_msgs::Path>("followed_path", 10);
     pub_car_model = nh_.advertise<visualization_msgs::Marker>("car_model", 10);
@@ -337,10 +337,9 @@ double PurePursuitNode::calcCurvature(geometry_msgs::Point target)
 
 void PurePursuitNode::publishControlCommandStamped(const bool &can_get_curvature, const double &curvature) const
 {
-    geometry_msgs::TwistStamped control_msg;
-    control_msg.header.stamp = ros::Time::now();
-    control_msg.twist.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
-    control_msg.twist.angular.z = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
+    geometry_msgs::Twist control_msg;
+    control_msg.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
+    control_msg.angular.z = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
     pub_ctl.publish(control_msg);
 }
 
@@ -374,16 +373,20 @@ void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStam
     current_linear_velocity_ = msg->twist.linear.x;
 }
 
-void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr &msg)
+void PurePursuitNode::callbackFromWayPoints(const nav_msgs::PathConstPtr &msg)
 {
     // 从way_ponits里面读取目标速度
-    if (msg->lanes[0].waypoints[0].twist.twist.linear.x != 0)
-        command_linear_velocity_ = msg->lanes[0].waypoints[0].twist.twist.linear.x;
-    else
-        command_linear_velocity_ = 1; //  1m/s
+    command_linear_velocity_ = 1; //  1m/s
 
     // 从消息中保存下载way_points
-    current_waypoints_ = msg->lanes[0].waypoints;
+    for(size_t i = 0; i < msg->poses.size(); i++){
+        smartcar_msgs::Waypoint p;
+        p.pose.pose.position.x = msg->poses[i].pose.position.x;
+        p.pose.pose.position.y = msg->poses[i].pose.position.y;
+        p.pose.pose.position.z = msg->poses[i].pose.position.z;
+        p.a = tf::getYaw(msg->poses[i].pose.orientation);
+        current_waypoints_.push_back(p);
+    }
     is_waypoint_set_ = true;
 }
 
