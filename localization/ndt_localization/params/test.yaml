@@ -17,6 +17,8 @@ if_init_pose_with_param: false  # if you want to initial the start-pose with giv
 debug: true
 method_type: 3   # pcl:0 gpu:1 omp:2 cpu:3
 
+is_filter_ground: true   # set this to filter out the ground of the input point cloud
+
 
 #>>>>>>>>Comman params
 map_frame: "map"

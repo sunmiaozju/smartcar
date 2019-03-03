@@ -1,11 +1,3 @@
-/*
- * @Description: 
- * @Author: sunm
- * @Github: https://github.com/sunmiaozju
- * @LastEditors: sunm
- * @Date: 2019-02-28 19:48:06
- * @LastEditTime: 2019-02-28 22:11:50
- */
 #ifndef GSYMMETRIC_EIGEN_
 #define GSYMMETRIC_EIGEN_
 

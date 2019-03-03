@@ -1,11 +1,3 @@
-/*
- * @Description: 
- * @Author: sunm
- * @Github: https://github.com/sunmiaozju
- * @LastEditors: sunm
- * @Date: 2019-02-28 22:00:31
- * @LastEditTime: 2019-02-28 22:00:31
- */
 /**
  * @brief 
  * 
@@ -30,6 +22,7 @@ bool NDTLocalization::init()
   pub_target_map = nh_.advertise<sensor_msgs::PointCloud2>("local_target_map",10);
 
   pthread_mutex_init(&mutex, NULL);
+  pnh_.param<bool>("is_filter_ground", is_filter_ground, true);
   pnh_.param<double>("min_scan_range",param_min_scan_range,1.0);
   pnh_.param<double>("max_scan_range",param_max_scan_range,100.0);
   std::cout << "min_scan_range: " << param_min_scan_range << std::endl;
@@ -50,7 +43,7 @@ bool NDTLocalization::init()
   pnh_.param<double>("tf_timeout", param_tf_timeout_, 0.05);
   pnh_.param<bool>("use_odom", param_use_odom_, true);
   pnh_.param<double>("odom_timeout", param_odom_timeout_, 1);
-  if(param_use_odom_){ROS_WARN("Use odom.");}else{ROS_WARN("Forbid odom");}
+  if(param_use_odom_){ROS_WARN_STREAM("Use odom.");}else{ROS_WARN_STREAM("Forbid odom");}
 
   pnh_.param<double>("predict_error_thresh", param_predict_error_thresh_, 0.5);
   pnh_.param<double>("ndt_resolution", param_ndt_resolution_, 1.0);
@@ -63,7 +56,7 @@ bool NDTLocalization::init()
 
   // 更新局部target地图相关参数
   pnh_.param<bool>("use_local_target",use_local_target,false);
-  if(use_local_target){ROS_WARN("Use local target map");}else{ROS_WARN("Use global target map");}
+  if(use_local_target){ROS_WARN_STREAM("Use local target map");}else{ROS_WARN_STREAM("Use global target map");}
   pnh_.param<double>("target_map_radius",target_map_radius,0.0);
   pnh_.param<double>("length_update_target_map",lengh_update_target_map,1.0);
   pnh_.param<std::string>("global_map_file",map_file,"Confirm Location of Global Map.");
@@ -128,6 +121,7 @@ bool NDTLocalization::init()
   }
   pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
   pub_path = nh_.advertise<nav_msgs::Path>("/debug/history_path",10);
+  pub_localPC_handled = nh_.advertise<sensor_msgs::PointCloud2>("/ndt/local_pointcloud", 10);
 
   if(param_debug_){
     pub_ndt_time = nh_.advertise<std_msgs::Float32>("/ndt_align_time",10);
@@ -136,15 +130,15 @@ bool NDTLocalization::init()
 
     pub_marker_loc_conf_ = nh_.advertise<visualization_msgs::Marker>("/ndt/loc_conf", 1);
     pub_marker_trans_prob_ = nh_.advertise<visualization_msgs::Marker>("/ndt/trans_prob", 1);
-
+    
   if (param_debug_)
   {
     pub_rawodom_ = nh_.advertise<nav_msgs::Odometry>("/map/odom", 10);
     msg_rawodom_.header.frame_id = param_map_frame_;  // nav_msgs::Odometry
   }
-
   ROS_INFO("End init NDTLocalization");
   return true;
+
 } // init params
 
 void NDTLocalization::initialPoseCB(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
@@ -449,9 +443,24 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     return;
   }
 
-  PointCloudT tmp,scan;
-  pcl::fromROSMsg(*msg, tmp);
-  PointCloudT::Ptr scan_ptr_temp(new PointCloudT(tmp));
+  PointCloudT scan;
+  PointCloudT::Ptr tmp(new PointCloudT());
+  pcl::fromROSMsg(*msg, *tmp);
+  pcl::PointCloud<PointT>::Ptr local_pc(new pcl::PointCloud<PointT>());
+  if(is_filter_ground){
+    filter.setIfClipHeight(false);
+    filter.convert(tmp,local_pc);
+
+    sensor_msgs::PointCloud2::Ptr localPC_ptr(new sensor_msgs::PointCloud2);
+    pcl::toROSMsg(*local_pc,*localPC_ptr);
+    localPC_ptr->header.frame_id = "velodyne";
+    localPC_ptr->header.stamp = ros::Time::now();
+    pub_localPC_handled.publish(*localPC_ptr);
+
+  }else{
+    local_pc = tmp;
+  }
+
   PointCloudT::Ptr scan_ptr(new PointCloudT());
   // if(use_local_target){
   //   for(auto point:tmp.points){
@@ -466,7 +475,7 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
 
   pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_filter;
   voxel_grid_filter.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
-  voxel_grid_filter.setInputCloud(scan_ptr_temp);
+  voxel_grid_filter.setInputCloud(local_pc);
   voxel_grid_filter.filter(*scan_ptr);
   // ROS_WARN("filtered size: %d",scan_ptr->points.size());
 
