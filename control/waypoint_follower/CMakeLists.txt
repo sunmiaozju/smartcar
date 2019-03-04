@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
         geometry_msgs
         smartcar_msgs
         nav_msgs
-        smartcar_config_msgs
         )
 
 catkin_package(
@@ -27,7 +26,6 @@ catkin_package(
         geometry_msgs
         smartcar_msgs
         nav_msgs
-        smartcar_config_msgs
         pcl_ros
 )
 

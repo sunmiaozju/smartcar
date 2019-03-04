@@ -51,6 +51,11 @@ bool NDTLocalization::init()
   pnh_.param<double>("ndt_step_size", param_ndt_step_size_, 0.1);
   pnh_.param<double>("ndt_epsilon", param_ndt_epsilon_, 0.01);
   pnh_.param<int>("method_type", param_method_type_, 0);
+  if(param_method_type_ == 0){
+    std::cout << "Use ndt gpu" << std::endl;
+  }else if(param_method_type_ == 3){
+    std::cout << "Use ndt cpu" << std::endl;
+  }
   pnh_.param<bool>("debug", param_debug_, false);
   pnh_.param<bool>("if_init_pose_with_param",param_init_pose_with_param,true);
 
@@ -442,11 +447,10 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
     ROS_WARN_STREAM("Cannot localize without given map and initial pose.");
     return;
   }
-
   PointCloudT scan;
   PointCloudT::Ptr tmp(new PointCloudT());
   pcl::fromROSMsg(*msg, *tmp);
-  pcl::PointCloud<PointT>::Ptr local_pc(new pcl::PointCloud<PointT>());
+  pcl::PointCloud<PointT>::Ptr local_pc(new PointCloudT());
   if(is_filter_ground){
     filter.setIfClipHeight(false);
     filter.convert(tmp,local_pc);
@@ -460,7 +464,6 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   }else{
     local_pc = tmp;
   }
-
   PointCloudT::Ptr scan_ptr(new PointCloudT());
   // if(use_local_target){
   //   for(auto point:tmp.points){
@@ -555,10 +558,10 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   }
   else if(param_method_type_ == METHOD_CPU){
     cpu_ndt_.setInputSource(scan_ptr);
-    if (param_debug_)
-    {
-      ROS_INFO("Start align cpu");
-    }
+    // if (param_debug_)
+    // {
+    //  ROS_INFO("Start align cpu");
+    // }
     align_start = ros::Time::now();
     cpu_ndt_.align(init_guess);
     align_end = ros::Time::now();

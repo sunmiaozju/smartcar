@@ -62,33 +62,33 @@ private:
     float radius; //cylindric coords on XY Plane
     float theta;  //angle deg on XY plane
 
-    int radial_div;     //index of the radial divsion to which this point belongs to
-    int concentric_div; //index of the concentric division to which this points belongs to
+    size_t radial_div;     //index of the radial divsion to which this point belongs to
+    size_t concentric_div; //index of the concentric division to which this points belongs to
 
-    int original_index; //index of this point in the source pointcloud
+    size_t original_index; //index of this point in the source pointcloud
   };
   typedef std::vector<PointXYZIRTColor> PointCloudXYZIRTColor;
 
-  int radial_dividers_num_;
-  int concentric_dividers_num_;
+  size_t radial_dividers_num_;
+  size_t concentric_dividers_num_;
 
 public:
   RayGroundFilter(){
-    SENSOR_MODEL = 16;
-    SENSOR_HEIGHT = 0.3;
-    local_max_slope_ = 8.0;
-    general_max_slope_ = 5.0;
-    min_height_threshold_ = 0.05;
-    reclass_distance_threshold_ = 0.2;
-    RADIAL_DIVIDER_ANGLE = 0.18;
-    concentric_divider_distance_ = 0.01;
-    MIN_DISTANCE = 2.4;
+    int SENSOR_MODEL = 16;
+    double SENSOR_HEIGHT = 0.3;
+    double local_max_slope_ = 8.0;
+    double general_max_slope_ = 5.0;
+    double min_height_threshold_ = 0.05;
+    double reclass_distance_threshold_ = 0.2;
+    double RADIAL_DIVIDER_ANGLE = 0.18;
+    double concentric_divider_distance_ = 0.01;
+    double MIN_DISTANCE = 2.4;
 
-    CLIP_HEIGHT = 1.0;
-    minX = -5.0;  
-    maxX = 20.0;
-    minY = -10.0;
-    maxY = 10.0;
+    double CLIP_HEIGHT = 1.0;
+    double minX = -5.0;  
+    double maxX = 20.0;
+    double minY = -10.0;
+    double maxY = 10.0;
   };
   ~RayGroundFilter(){};
 
@@ -123,7 +123,7 @@ public:
         cliper.setInputCloud(in);
         pcl::PointIndices indices;
     #pragma omp for
-        for (int i = 0; i < in->points.size(); i++)
+        for (size_t i = 0; i < in->points.size(); i++)
         {
             // double distance = sqrt(in->points[i].x * in->points[i].x + in->points[i].y * in->points[i].y);
 
@@ -162,13 +162,16 @@ public:
                                     std::vector<pcl::PointIndices> &out_radial_divided_indices,
                                     std::vector<PointCloudXYZIRTColor> &out_radial_ordered_clouds)
     {
+        std::cout << "ground_filter: incloud size: " << in_cloud->points.size() << std::endl;
         out_organized_points.resize(in_cloud->points.size());
         out_radial_divided_indices.clear();
         
+        std::cout << "radial divider num " << radial_dividers_num_ << std::endl;
         out_radial_divided_indices.resize(radial_dividers_num_);
         out_radial_ordered_clouds.resize(radial_dividers_num_);
+        std::cout << "ground_filter: XYZI_to_RTZColor-1" << std::endl;
 
-        for (int i = 0; i < in_cloud->points.size(); i++)
+        for (size_t i = 0; i < in_cloud->points.size(); i++)
         {
             PointXYZIRTColor new_point;
             auto radius = (float)sqrt(
@@ -201,7 +204,7 @@ public:
 
         //将同一根射线上的点按照半径（距离）排序
     #pragma omp for
-        for (int i = 0; i < radial_dividers_num_; i++)
+        for (size_t i = 0; i < radial_dividers_num_; i++)
         {
             std::sort(out_radial_ordered_clouds[i].begin(), out_radial_ordered_clouds[i].end(),
                     [](const PointXYZIRTColor &a, const PointXYZIRTColor &b) { return a.radius < b.radius; });
@@ -221,13 +224,13 @@ public:
         out_ground_indices.indices.clear();
         out_no_ground_indices.indices.clear();
     #pragma omp for
-        for (int i = 0; i < in_radial_ordered_clouds.size(); i++) //sweep through each radial division 遍历每一根射线
+        for (size_t i = 0; i < in_radial_ordered_clouds.size(); i++) //sweep through each radial division 遍历每一根射线
         {
             float prev_radius = 0.f;
             float prev_height = -SENSOR_HEIGHT;
             bool prev_ground = false;
             bool current_ground = false;
-            for (int j = 0; j < in_radial_ordered_clouds[i].size(); j++) //loop through each point in the radial div
+            for (size_t j = 0; j < in_radial_ordered_clouds[i].size(); j++) //loop through each point in the radial div
             {
                 float points_distance = in_radial_ordered_clouds[i][j].radius - prev_radius;
                 float height_threshold = tan(DEG2RAD(local_max_slope_)) * points_distance;
@@ -316,20 +319,26 @@ public:
         std::vector<PointCloudXYZIRTColor> radial_ordered_clouds;
 
         radial_dividers_num_ = ceil(360 / RADIAL_DIVIDER_ANGLE);
+        std::cout << "ground_filter: RADIAL_DIVIDER_ANGLE" << RADIAL_DIVIDER_ANGLE << std::endl;
+        std::cout << "ground_filter: remove_close" << remove_close->points.size() << std::endl;
 
         XYZI_to_RTZColor(remove_close, organized_points,
                         radial_division_indices, radial_ordered_clouds);
+        std::cout << "ground_filter: set5" << std::endl;
 
         pcl::PointIndices ground_indices, no_ground_indices;
 
         classify_pc(radial_ordered_clouds, ground_indices, no_ground_indices);
+        std::cout << "ground_filter: set6" << std::endl;
 
         pcl::ExtractIndices<PointNoI> extract_ground;
         extract_ground.setInputCloud(remove_close);
         extract_ground.setIndices(boost::make_shared<pcl::PointIndices>(ground_indices));
+        std::cout << "ground_filter: set8" << std::endl;
 
         extract_ground.setNegative(true); //true removes the indices, false leaves only the indices
         extract_ground.filter(*no_ground_cloud_ptr);
+        std::cout << "ground_filter: set9" << std::endl;
         if(!is_clip_height){
             *no_ground_cloud_ptr += *up_pc_ptr;
         }
