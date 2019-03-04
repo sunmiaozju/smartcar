@@ -126,7 +126,7 @@ bool NDTLocalization::init()
   }
   pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
   pub_path = nh_.advertise<nav_msgs::Path>("/debug/history_path",10);
-  pub_localPC_handled = nh_.advertise<sensor_msgs::PointCloud2>("/ndt/local_pointcloud", 10);
+  pub_localPC_handled = nh_.advertise<sensor_msgs::PointCloud2>("/velodyne_no_ground", 10);
 
   if(param_debug_){
     pub_ndt_time = nh_.advertise<std_msgs::Float32>("/ndt_align_time",10);
