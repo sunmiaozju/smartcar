@@ -9,6 +9,6 @@
   <node pkg="rviz" type="rviz" name="Rviz_for_ndt_localization" args="-d $(find ndt_localization)/rviz/test_ndt_localization.rviz" />
   <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
     <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
-    <param name="global_map_file" value="$(find static_map)/map_file/yuquan_38w_no_ground.pcd"/>
+    <param name="global_map_file" value="$(find static_map)/map_file/yuquan_40w_no_ground_white.pcd"/>
   </node>
 </launch>
