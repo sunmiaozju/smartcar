@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find ndt_localization)/launch/test_ndt.launch" />
+    <include file="$(find gen_costmap)/launch/gen_costmap.launch" />
+</launch>

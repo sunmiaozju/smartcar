@@ -20,6 +20,7 @@
 #include <climits>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <tf/transform_broadcaster.h>
 
 namespace GLOBAL_PLANNER{
 bool cmp_c(const path_msgs::Cross a, const path_msgs::Cross b){
@@ -51,6 +52,7 @@ private:
     visualization_msgs::Marker marker_car;
 
     std::vector<int> result;
+    tf::TransformBroadcaster tf_broadcaster_;
     
     void constract_Lane_Cross_vec(const std::string path);
     void getAllFiles(const std::string path, std::vector<std::string>& files);
@@ -574,6 +576,11 @@ void global_plan::endPose_cb(const geometry_msgs::PoseStampedConstPtr &msg){
     if(is_simulate_car){
         int cnt = 1;
         for(auto p:result_path.poses){
+            tf::Quaternion tmp_q;
+            tf::quaternionMsgToTF(p.pose.orientation, tmp_q);
+            tf::Transform transform2(tmp_q, tf::Vector3(p.pose.position.x, p.pose.position.y, p.pose.position.z));
+            tf_broadcaster_.sendTransform(tf::StampedTransform(transform2,ros::Time::now(),"map","simu_car"));
+            
             marker_car.header.stamp = ros::Time::now();
             marker_car.pose.position = p.pose.position;
             double current_roll, current_yaw, current_pitch;
@@ -583,7 +590,6 @@ void global_plan::endPose_cb(const geometry_msgs::PoseStampedConstPtr &msg){
             marker_car.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(90 * (M_PI / 180.0),
                                                                                     0 * (M_PI / 180.0),
                                                                                     current_yaw + M_PI / 2.0);
-
             pub_car_model.publish(marker_car);
             ros::Duration(0.05).sleep();
         }

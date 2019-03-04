@@ -1,0 +1,13 @@
+confidence: 0.5
+cost_base: 20
+frame_num: 2
+resolution: 0.051
+xh: 50.0
+xl: -10.0
+yh: 10.0
+yl: -10.0
+zh: 1.0
+zl: -2.0
+delta: 0.1
+use_filter: true
+laser_frame: "velodyne"

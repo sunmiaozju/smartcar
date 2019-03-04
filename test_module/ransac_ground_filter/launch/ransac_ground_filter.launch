@@ -1,8 +1,0 @@
-<launch>
-    <node pkg="ransac_ground_filter" type="ransac_ground_filter_node" name="ransac_ground_filter_node" output="screen">
-        <rosparam file="$(find ransac_ground_filter)/params/ransac_ground_filter_params.yaml" command="load"/>
-    </node>
-
-
-
-</launch>
