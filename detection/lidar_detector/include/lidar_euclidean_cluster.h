@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-01 11:26:40
- * @LastEditTime: 2019-03-01 22:25:58
+ * @LastEditTime: 2019-03-05 21:06:54
  */
 #ifndef LIDAR_EUCLIDEAN_CLUSTER_H
 #define LIDAR_EUCLIDEAN_CLUSTER_H
@@ -15,13 +15,39 @@
 #include <ros/ros.h>
 
 #include <pcl/common/common.h>
+#include <pcl/features/don.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/filters/conditional_removal.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/search/impl/search.hpp>
+#include <pcl/search/kdtree.h>
+#include <pcl/search/search.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_ros/point_cloud.h>
+
 #include <sensor_msgs/PointCloud2.h>
 
+#include "cluster.h"
+
 namespace LidarDetector {
+
+class PointXYZRT {
+public:
+    pcl::PointXYZ point;
+
+    float radius;
+    float theta;
+
+    size_t radial_div;
+    size_t concentric_div;
+
+    size_t original_index;
+};
+
+typedef std::vector<PointXYZRT> PointCloudXYZRT;
 
 class LidarClusterDetector {
 public:
@@ -47,17 +73,40 @@ private:
     double height_threshhold;
     double floor_max_height;
     double floor_max_angle;
+    double small_scale;
+    double large_scale;
+    double angle_threshold;
+    double radial_divide_angle;
+    double concentric_divide_distance;
+    double min_local_height_threshold;
+    double sensor_height;
+    double local_threshold_slope;
+    double general_threshold_slope;
+    double left_right_dis_threshold;
+
+    double cluster_min_points;
+    double cluster_max_points;
+
+    std::vector<double> dis_range;
+    std::string str_range;
+
+    void differenceOfNormalsSegmentation(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud);
 
     void removeFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
         pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud,
         pcl::PointCloud<pcl::PointXYZ>::Ptr& only_floor_cloud,
         const double& max_height, const double& floor_max_angle);
 
-    void mergeClusters();
+    void removeFloorRayFiltered(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_only_ground_cloud,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_no_ground_cloud,
+        const double& sensor_height, const double& local_max_slope, const double& general_max_slope);
 
-    void removeNearAndFarPoints(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
-        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud,
-        const double& near_dis, const double& fat_dis);
+    void convertXYZ2XYZRT(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        std::vector<PointCloudXYZRT>& out_radial_divided_cloud);
+
+    void mergeClusters();
 
     void downsampleCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
         pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud,
@@ -65,11 +114,15 @@ private:
 
     void clipCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
         pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud,
-        const double& height);
+        const double& height, const double& near_dis, const double& fat_dis, const double& left_right_dis);
 
-    void cluster();
+    void clusterCpu(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        std::vector<ClusterPtr>& cluster, const double& max_cluster_dis);
 
     void clusterGpu();
+
+    void segmentByDistance(const pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud_ptr,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr);
 
     void getPointCloud_cb(
         const sensor_msgs::PointCloud2ConstPtr& msg_rawPointCloud);
