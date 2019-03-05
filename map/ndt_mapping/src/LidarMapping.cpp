@@ -96,7 +96,7 @@ namespace FAST_NDT{
 				std::cout << ">> Use OMP NDT <<" << std::endl;
 				break;
 			default:
-				ROS_ERROR("Invalid method type of NDT");
+				ROS_ERROR_STREAM("Invalid method type of NDT");
 				exit(1);
 		}
 		std::cout << std::endl;
@@ -104,13 +104,13 @@ namespace FAST_NDT{
 		tf::StampedTransform transform;
 		try{
 			ros::Time now = ros::Time::now();
-			ROS_INFO("now:%f listen from static_tf and set tf_btol");
+			ROS_INFO_STREAM("now:%f listen from static_tf and set tf_btol");
 			tf_listener.waitForTransform(param_base_frame,param_laser_frame,ros::Time(0),ros::Duration(param_tf_timeout * 10), ros::Duration(param_tf_timeout / 3));
 			tf_listener.lookupTransform(param_base_frame,param_laser_frame,ros::Time(0),transform);
-			ROS_INFO("success listen from tf");
+			ROS_INFO_STREAM("success listen from tf");
 		}
 		catch(const tf::TransformException &ex){
-			ROS_ERROR("Error waiting for tf in init: %s",ex.what());
+			ROS_ERROR_STREAM("Error waiting for tf in init: %s",ex.what());
 			return;
 		}
 		Eigen::Translation3f tl_btol(transform.getOrigin().getX(),transform.getOrigin().getY(),transform.getOrigin().getZ());
@@ -647,7 +647,7 @@ namespace FAST_NDT{
 		ros::Time test_time_4 = ros::Time::now();  // TODO:
 		
 		if(final_num_iteration > 20){
-			ROS_ERROR("too much iteration !");
+			ROS_ERROR_STREAM("too much iteration !");
 			return;
 		}
 
