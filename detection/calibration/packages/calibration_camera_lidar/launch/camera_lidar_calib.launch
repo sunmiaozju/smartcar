@@ -1,7 +1,0 @@
-<launch>
-  <!-- <param name="camera_lidar2d/camera_yaml" value="$(find calibration_camera_lidar)/param.yaml" /> -->
-  <node pkg="calibration_camera_lidar" type="calibration_toolkit" name="calibration_toolkit" >
-    <!-- <remap from="image_raw" to="cv_camera/image_raw"/> -->
-    <!-- <remap from="/points_raw" to="velodyne_points"/> -->
-  </node>
-</launch>

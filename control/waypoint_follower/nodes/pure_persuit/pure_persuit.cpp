@@ -48,7 +48,7 @@ void PurePursuitNode::initForROS()
 
     // setup subscriber
     sub_lane = nh_.subscribe("global_path", 10, &PurePursuitNode::callbackFromWayPoints, this);
-    sub_currentpose = nh_.subscribe("current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
+    sub_currentpose = nh_.subscribe("/ndt/current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
     sub_speed = nh_.subscribe("ndt_speed", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
 
     // setup publisher
@@ -62,6 +62,7 @@ void PurePursuitNode::run()
 {
     // ROS_INFO_STREAM("pure pursuit start");
     ros::Rate loop_rate(LOOP_RATE_);
+
     while (ros::ok())
     {
         ros::spinOnce();
@@ -82,7 +83,7 @@ void PurePursuitNode::run()
         visualInRviz();
 
         is_pose_set_ = false;
-        is_waypoint_set_ = false;
+        // is_waypoint_set_ = false;
     }
 }
 
@@ -384,9 +385,11 @@ void PurePursuitNode::callbackFromWayPoints(const nav_msgs::PathConstPtr &msg)
         p.pose.pose.position.x = msg->poses[i].pose.position.x;
         p.pose.pose.position.y = msg->poses[i].pose.position.y;
         p.pose.pose.position.z = msg->poses[i].pose.position.z;
+        // p.a = 1.0;
         p.a = tf::getYaw(msg->poses[i].pose.orientation);
         current_waypoints_.push_back(p);
     }
+    
     is_waypoint_set_ = true;
 }
 
