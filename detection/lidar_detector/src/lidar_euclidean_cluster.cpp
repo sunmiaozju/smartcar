@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-01 11:25:55
- * @LastEditTime: 2019-03-05 22:42:42
+ * @LastEditTime: 2019-03-06 10:18:47
  */
 
 #include "lidar_euclidean_cluster.h"
@@ -16,11 +16,10 @@ LidarClusterDetector::LidarClusterDetector()
 {
     initROS();
 
-    std::string tmp;
-    std::istringstream in(str_range);
-    while (std::getline(in, tmp, ',')) {
-        dis_range.push_back(stod(tmp));
-    }
+    splitString(str_range, dis_range);
+    splitString(str_seg_distances, seg_distances);
+
+    generateColors(color_table, 255, 100);
 }
 
 LidarClusterDetector::~LidarClusterDetector() {}
@@ -34,6 +33,7 @@ void LidarClusterDetector::initROS()
         "velodyne_points", 10, &LidarClusterDetector::getPointCloud_cb, this);
     pub_testPointCloud = nh.advertise<sensor_msgs::PointCloud2>("test_pointcloud", 10);
     pub2_testPointCloud = nh.advertise<sensor_msgs::PointCloud2>("test2_pointcloud", 10);
+    pub_clusters = nh.advertise<sensor_msgs::PointCloud2>("test2_pointcloud", 10);
 
     private_nh.param<double>("nearDistance", nearDistance, 2.0);
     private_nh.param<double>("farDistance", farDistance, 30);
@@ -51,7 +51,10 @@ void LidarClusterDetector::initROS()
     private_nh.param<double>("local_threshold_slope", local_threshold_slope, 3.0);
     private_nh.param<double>("general_threshold_slope", general_threshold_slope, 2.0);
     private_nh.param<double>("left_right_dis_threshold", left_right_dis_threshold, 6.5);
+
     private_nh.param<std::string>("str_range", str_range, "15,30,45,60");
+    private_nh.param<std::string>("str_seg_distances", str_seg_distances, "0.5,1.1,1.6,2.1,2.6");
+
     private_nh.param<double>("cluster_min_points", cluster_min_points, 10);
     private_nh.param<double>("cluster_max_points", cluster_max_points, 100000);
 }
@@ -143,13 +146,15 @@ void LidarClusterDetector::segmentByDistance(const pcl::PointCloud<pcl::PointXYZ
 
     std::vector<ClusterPtr> clusters;
     for (size_t i = 0; i < cloud_segments_array.size(); i++) {
-        // clusterCpu(cloud_segments_array[i],);
-        ;
+        clusterCpu(cloud_segments_array[i], clusters, seg_distances[i]);
     }
 }
 
+/**
+ * @description: 对聚类结果进行后处理，生成聚类的相关信息保存到cluster类中
+ */
 void LidarClusterDetector::clusterCpu(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
-    std::vector<ClusterPtr>& cluster, const double& max_cluster_dis)
+    std::vector<ClusterPtr>& clusters, const double& max_cluster_dis)
 {
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
 
@@ -179,6 +184,8 @@ void LidarClusterDetector::clusterCpu(const pcl::PointCloud<pcl::PointXYZ>::Ptr&
 
     for (size_t j = 0; j < cluster_indices.size(); j++) {
         ClusterPtr one_cluster;
+        one_cluster->setCloud(in_cloud, color_table, cluster_indices[j].indices, j);
+        clusters.push_back(one_cluster);
     }
 }
 
@@ -457,4 +464,19 @@ void LidarClusterDetector::pubPointCloud(
     msg_pointcloud.header = msg_header;
     publisher.publish(msg_pointcloud);
 }
+
+void LidarClusterDetector::splitString(const std::string& in_string, std::vector<double>& out_array)
+{
+    std::string tmp;
+    std::istringstream in(in_string);
+    while (std::getline(in, tmp, ',')) {
+        out_array.push_back(stod(tmp));
+    }
+}
+
+void pubClusters(const std::vector<ClusterPtr> &in_clusters,
+        const ros::Publisher& pub){
+ 
+        }
+
 } // namespace LidarDetector

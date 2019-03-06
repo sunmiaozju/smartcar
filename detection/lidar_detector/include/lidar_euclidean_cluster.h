@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-01 11:26:40
- * @LastEditTime: 2019-03-05 21:06:54
+ * @LastEditTime: 2019-03-06 21:28:08
  */
 #ifndef LIDAR_EUCLIDEAN_CLUSTER_H
 #define LIDAR_EUCLIDEAN_CLUSTER_H
@@ -29,6 +29,7 @@
 #include <pcl_ros/point_cloud.h>
 
 #include <sensor_msgs/PointCloud2.h>
+// #include
 
 #include "cluster.h"
 
@@ -62,6 +63,7 @@ private:
     ros::Subscriber sub_rawPointCloud;
     ros::Publisher pub_testPointCloud;
     ros::Publisher pub2_testPointCloud;
+    ros::Publisher pub_clusters;
 
     std::chrono::system_clock::time_point start_time, end_time;
     std_msgs::Header msg_header;
@@ -88,7 +90,11 @@ private:
     double cluster_max_points;
 
     std::vector<double> dis_range;
+    std::vector<double> seg_distances;
     std::string str_range;
+    std::string str_seg_distances;
+
+    std::vector<cv::Scalar> color_table;
 
     void differenceOfNormalsSegmentation(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
         pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud);
@@ -132,6 +138,11 @@ private:
     void pubPointCloud(
         const ros::Publisher& publisher,
         const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_pointcloud);
+
+    void splitString(const std::string& in_string, std::vector<double>& out_array);
+
+    void pubClusters(const std::vector<ClusterPtr>& in_clusters,
+        const ros::Publisher& pub);
 };
 
 } // namespace LidarDetector
