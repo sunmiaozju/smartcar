@@ -23,7 +23,6 @@
 // User defined includes
 #include "smartcar_msgs/Lane.h"
 #include "smartcar_msgs/LaneArray.h"
-#include "smartcar_config_msgs/ConfigWaypointFollower.h"
 #include "smartcar_msgs/ControlCommandStamped.h"
 
 namespace waypoint_follower
