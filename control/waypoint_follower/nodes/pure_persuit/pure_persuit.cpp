@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 10:47:42
- * @LastEditTime: 2019-02-28 21:53:53
+ * @LastEditTime: 2019-03-07 20:30:13
  */
 // ROS Includes
 #include <ros/ros.h>
@@ -12,18 +12,18 @@
 // User defined includes
 #include "pure_persuit.h"
 
-namespace waypoint_follower
-{
+namespace waypoint_follower {
 // Constructor
-PurePursuitNode::PurePursuitNode() : private_nh_("~"),
-                                     LOOP_RATE_(10),
-                                     curvature_MIN_(1 / 9e10),
-                                     is_waypoint_set_(false),
-                                     is_pose_set_(false),
-                                     current_linear_velocity_(0),
-                                     command_linear_velocity_(0),
-                                     next_waypoint_number_(-1),
-                                     lookahead_distance_(0)
+PurePursuitNode::PurePursuitNode()
+    : private_nh_("~")
+    , LOOP_RATE_(10)
+    , curvature_MIN_(1 / 9e10)
+    , is_waypoint_set_(false)
+    , is_pose_set_(false)
+    , current_linear_velocity_(0)
+    , command_linear_velocity_(0)
+    , next_waypoint_number_(-1)
+    , lookahead_distance_(0)
 {
     // 设置了订阅，发布的话题消息， 读取了launch文件中的配置变量
     initForROS();
@@ -62,11 +62,9 @@ void PurePursuitNode::run()
 {
     // ROS_INFO_STREAM("pure pursuit start");
     ros::Rate loop_rate(LOOP_RATE_);
-    while (ros::ok())
-    {
+    while (ros::ok()) {
         ros::spinOnce();
-        if (!is_pose_set_ || !is_waypoint_set_)
-        {
+        if (!is_pose_set_ || !is_waypoint_set_) {
             // ROS_WARN("Necessary topics are not subscribed yet ... ");
             loop_rate.sleep();
             continue;
@@ -86,22 +84,19 @@ void PurePursuitNode::run()
     }
 }
 
-bool PurePursuitNode::computeCurvature(double *output_curvature)
+bool PurePursuitNode::computeCurvature(double* output_curvature)
 {
     // search next waypoint
     // 获取了大于前视距离的最邻近点，保存在了next_waypoint_number_
     // 如果没有可以用于跟踪的目标路径点,那么会返回-1
     getNextWaypoint();
-    if (next_waypoint_number_ == -1)
-    {
+    if (next_waypoint_number_ == -1) {
         ROS_INFO("lost next waypoint");
         return false;
     }
 
     // if is_linear_interpolation_ is false or next waypoint is first or last
-    if (!is_linear_interpolation_ || next_waypoint_number_ == 0 ||
-        next_waypoint_number_ == (static_cast<int>(current_waypoints_.size() - 1)))
-    {
+    if (!is_linear_interpolation_ || next_waypoint_number_ == 0 || next_waypoint_number_ == (static_cast<int>(current_waypoints_.size() - 1))) {
         next_target_position_ = current_waypoints_.at(next_waypoint_number_).pose.pose.position;
         *output_curvature = calcCurvature(next_target_position_);
         return true;
@@ -109,8 +104,7 @@ bool PurePursuitNode::computeCurvature(double *output_curvature)
 
     // linear interpolation and calculate angular velocity
     bool interpolation = interpolateNextTarget(next_waypoint_number_, &next_target_position_);
-    if (!interpolation)
-    {
+    if (!interpolation) {
         ROS_INFO_STREAM("lost target! ");
         return false;
     }
@@ -128,37 +122,31 @@ void PurePursuitNode::getNextWaypoint()
     static float search_radius = 2;
 
     // if waypoints are not given, do nothing.
-    if (path_size == 0)
-    {
+    if (path_size == 0) {
         next_waypoint_number_ = -1;
         return;
     }
-    while (1)
-    {
+    while (1) {
         // look for the next waypoint.
-        for (int i = search_start_index; i < path_size; i++)
-        {
+        for (int i = search_start_index; i < path_size; i++) {
             // if there exists an effective waypoint
             // getPlaneDistances()函数是获得水平距离，不计算z轴的数据
             // 如果计算的距离小于前视距离，那么就计算下一个点
             // 如果找完所有的点都没有大于前视距离的点了，那么就选取最后一个点
             double dis = getPlaneDistance(current_waypoints_.at(i).pose.pose.position, current_pose_.position);
 
-            if (dis < search_radius)
-            {
+            if (dis < search_radius) {
                 clearest_points_index = i;
                 is_find_clearest_point = true;
                 if (search_radius > 2)
                     search_radius -= 0.5;
             }
 
-            if ((dis > lookahead_distance_) && (pre_index <= i) && (clearest_points_index <= i))
-            {
+            if ((dis > lookahead_distance_) && (pre_index <= i) && (clearest_points_index <= i)) {
                 next_waypoint_number_ = i;
                 search_start_index = (i - 15 > 0) ? (i - 15) : 0;
                 pre_index = i;
-                if (is_find_clearest_point)
-                {
+                if (is_find_clearest_point) {
                     is_find_clearest_point = false;
                     return;
                 }
@@ -178,13 +166,12 @@ void PurePursuitNode::getNextWaypoint()
 }
 
 // linear interpolation of next target
-bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Point *next_target)
+bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Point* next_target)
 {
     const double ERROR = pow(10, -5); // 0.00001
 
     int path_size = static_cast<int>(current_waypoints_.size());
-    if (next_waypoint == path_size - 1)
-    {
+    if (next_waypoint == path_size - 1) {
         *next_target = current_waypoints_.at(next_waypoint).pose.pose.position;
         return true;
     }
@@ -228,7 +215,7 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
 
     // normal unit vectors of v
     // 将上面的单位向量分别顺时针和逆时针旋转90度
-    tf::Vector3 unit_w1 = rotateUnitVector(unit_v, 90);  // rotate to counter clockwise 90 degree
+    tf::Vector3 unit_w1 = rotateUnitVector(unit_v, 90); // rotate to counter clockwise 90 degree
     tf::Vector3 unit_w2 = rotateUnitVector(unit_v, -90); // rotate to counter clockwise -90 degree
 
     // the foot of a perpendicular line
@@ -249,18 +236,13 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
     // 如果直线的的斜率是正的，那么h2垂足是在直线上，保留，h1舍弃
     // check which of two foot of a perpendicular line is on the line equation
     geometry_msgs::Point h;
-    if (fabs(a * h1.x + b * h1.y + c) < ERROR)
-    {
+    if (fabs(a * h1.x + b * h1.y + c) < ERROR) {
         h = h1;
         //   ROS_INFO("use h1");
-    }
-    else if (fabs(a * h2.x + b * h2.y + c) < ERROR)
-    {
+    } else if (fabs(a * h2.x + b * h2.y + c) < ERROR) {
         //   ROS_INFO("use h2");
         h = h2;
-    }
-    else
-    {
+    } else {
         return false;
     }
 
@@ -269,13 +251,10 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
     // 如果计算出来的 当前位置到拟合直线的距离 大于这个圈，即拟合直线和圈没有交点，那么情况错误，函数直接返回false
     // 如果有一个交点，那么这个交点就是我们的预瞄点，如果有两个交点，那么就选取教前方那个点。
     // if there is a intersection
-    if (d == search_radius)
-    {
+    if (d == search_radius) {
         *next_target = h;
         return true;
-    }
-    else
-    {
+    } else {
         // if there are two intersection
         // get intersection in front of vehicle
         double s = sqrt(pow(search_radius, 2) - pow(d, 2));
@@ -295,20 +274,15 @@ bool PurePursuitNode::interpolateNextTarget(int next_waypoint, geometry_msgs::Po
 
         // check intersection is between end and start
         double interval = getPlaneDistance(end, start);
-        if (getPlaneDistance(target1, end) < interval)
-        {
+        if (getPlaneDistance(target1, end) < interval) {
             // ROS_INFO("result : target1");
             *next_target = target1;
             return true;
-        }
-        else if (getPlaneDistance(target2, end) < interval)
-        {
+        } else if (getPlaneDistance(target2, end) < interval) {
             // ROS_INFO("result : target2");
             *next_target = target2;
             return true;
-        }
-        else
-        {
+        } else {
             // ROS_INFO("result : false ");
             return false;
         }
@@ -325,8 +299,7 @@ double PurePursuitNode::calcCurvature(geometry_msgs::Point target)
 
     if (denominator != 0)
         curvature = numerator / denominator;
-    else
-    {
+    else {
         if (numerator > 0)
             curvature = curvature_MIN_;
         else
@@ -335,7 +308,7 @@ double PurePursuitNode::calcCurvature(geometry_msgs::Point target)
     return curvature;
 }
 
-void PurePursuitNode::publishControlCommandStamped(const bool &can_get_curvature, const double &curvature) const
+void PurePursuitNode::publishControlCommandStamped(const bool& can_get_curvature, const double& curvature) const
 {
     geometry_msgs::TwistStamped control_msg;
     control_msg.header.stamp = ros::Time::now();
@@ -362,23 +335,23 @@ double PurePursuitNode::computeCommandVelocity() const
     return command_linear_velocity_;
 }
 
-void PurePursuitNode::callbackFromCurrentPose(const geometry_msgs::PoseStampedConstPtr &msg)
+void PurePursuitNode::callbackFromCurrentPose(const geometry_msgs::PoseStampedConstPtr& msg)
 {
     // 读取了当前的车辆pose消息，里面有xyz和四元数
     current_pose_ = msg->pose;
     is_pose_set_ = true;
 }
 
-void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr &msg)
+void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr& msg)
 {
     current_linear_velocity_ = msg->twist.linear.x;
 }
 
-void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr &msg)
+void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr& msg)
 {
     // 从way_ponits里面读取目标速度
-    if (msg->lanes[0].waypoints[0].twist.twist.linear.x != 0)
-        command_linear_velocity_ = msg->lanes[0].waypoints[0].twist.twist.linear.x;
+    if (msg->lanes[0].waypoints[0].speed_limit != 0)
+        command_linear_velocity_ = msg->lanes[0].waypoints[0].speed_limit;
     else
         command_linear_velocity_ = 1; //  1m/s
 
@@ -424,7 +397,7 @@ tf::Vector3 PurePursuitNode::rotateUnitVector(tf::Vector3 unit_vector, double de
 {
     tf::Vector3
         w1(cos(deg2rad(degree)) * unit_vector.getX() - sin(deg2rad(degree)) * unit_vector.getY(),
-           sin(deg2rad(degree)) * unit_vector.getX() + cos(deg2rad(degree)) * unit_vector.getY(), 0);
+            sin(deg2rad(degree)) * unit_vector.getX() + cos(deg2rad(degree)) * unit_vector.getY(), 0);
     tf::Vector3 unit_w1 = w1.normalize();
     return unit_w1;
 }
@@ -435,15 +408,14 @@ tf::Vector3 PurePursuitNode::point2vector(geometry_msgs::Point point)
     return vector;
 }
 
-bool PurePursuitNode::getLinearEquation(geometry_msgs::Point start, geometry_msgs::Point end, double *a, double *b, double *c)
+bool PurePursuitNode::getLinearEquation(geometry_msgs::Point start, geometry_msgs::Point end, double* a, double* b, double* c)
 {
     //(x1, y1) = (start.x, star.y), (x2, y2) = (end.x, end.y)
     double sub_x = fabs(start.x - end.x);
     double sub_y = fabs(start.y - end.y);
     double error = pow(10, -5); // 0.00001
 
-    if (sub_x < error && sub_y < error)
-    {
+    if (sub_x < error && sub_y < error) {
         ROS_INFO("two points are the same point!!");
         return false;
     }
@@ -459,8 +431,7 @@ void PurePursuitNode::visualInRviz()
 {
     nav_msgs::Path msg_path;
     visualization_msgs::MarkerArray msg_marker_array;
-    for (size_t i = 0; i < current_waypoints_.size(); i++)
-    {
+    for (size_t i = 0; i < current_waypoints_.size(); i++) {
         // visual global path in rviz
         geometry_msgs::PoseStamped msg_pose;
         msg_path.header.stamp = ros::Time();
@@ -477,17 +448,14 @@ void PurePursuitNode::visualInRviz()
         msg_arrow_marker.type = visualization_msgs::Marker::ARROW;
         msg_arrow_marker.action = visualization_msgs::Marker::ADD;
         msg_arrow_marker.pose = current_waypoints_[i].pose.pose;
-        if (int(i) == next_waypoint_number_)
-        {
+        if (int(i) == next_waypoint_number_) {
             msg_arrow_marker.color.r = 1.0;
             msg_arrow_marker.color.g = 0.0;
             msg_arrow_marker.color.b = 0.0;
             msg_arrow_marker.scale.x = 0.9;
             msg_arrow_marker.scale.y = 0.15;
             msg_arrow_marker.scale.z = 0.15;
-        }
-        else
-        {
+        } else {
             msg_arrow_marker.color.r = 0.0;
             msg_arrow_marker.color.g = 1.0;
             msg_arrow_marker.color.b = 0.0;
@@ -514,8 +482,8 @@ void PurePursuitNode::visualInRviz()
     tf::quaternionMsgToTF(current_waypoints_[next_waypoint_number_ - 4].pose.pose.orientation, quat);
     tf::Matrix3x3(quat).getRPY(current_roll, current_pitch, current_yaw);
     msg_car_marker.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(90 * (M_PI / 180.0),
-                                                                              0 * (M_PI / 180.0),
-                                                                              current_yaw + M_PI / 2.0);
+        0 * (M_PI / 180.0),
+        current_yaw + M_PI / 2.0);
     msg_car_marker.pose.position = current_pose_.position;
     msg_car_marker.pose.position.z = current_waypoints_[next_waypoint_number_ - 4].pose.pose.position.z;
     msg_car_marker.color.r = 0.7;
