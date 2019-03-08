@@ -80,7 +80,7 @@ bool NDTLocalization::init()
 #endif
   }
 
-  // set tf_btol and tf_btol.inverse   (base_link -> laser_link)
+  // set t_btol and tf_btol.inverse   (base_link -> laser_link)
   tf::StampedTransform transform;
   try
   {
@@ -453,6 +453,8 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr &msg
   pcl::PointCloud<PointT>::Ptr local_pc(new PointCloudT());
   if(is_filter_ground){
     filter.setIfClipHeight(false);
+    // filter.setCloseROI(-3,-3,3,3);
+    filter.setMinDistance(1.5);
     filter.convert(tmp,local_pc);
 
     sensor_msgs::PointCloud2::Ptr localPC_ptr(new sensor_msgs::PointCloud2);
