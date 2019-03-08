@@ -4,16 +4,15 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 21:34:40
- * @LastEditTime: 2019-02-22 10:21:34
+ * @LastEditTime: 2019-03-08 22:15:08
  */
 #include "joint_pixel_pointcloud.h"
 
 using namespace NODE_JOINT_PIXEL_POINTCLOUD;
 
-void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr &image_msg)
+void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr& image_msg)
 {
-    if (!camera_info_ok_)
-    {
+    if (!camera_info_ok_) {
         ROS_INFO("joint_pixel_pointcloud : waiting for intrinsics to be availiable");
         return;
     }
@@ -30,7 +29,7 @@ void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr &image_m
     image_size.width = current_frame.cols;
 }
 
-void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo &intrinsisc_msg)
+void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo& intrinsisc_msg)
 {
     image_size.height = intrinsisc_msg.height;
     image_size.width = intrinsisc_msg.width;
@@ -38,18 +37,15 @@ void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo &intrins
     // 相机内参
     camera_instrinsics = cv::Mat(3, 3, CV_64F);
 
-    for (int row = 0; row < 3; row++)
-    {
-        for (int col = 0; col < 3; col++)
-        {
+    for (int row = 0; row < 3; row++) {
+        for (int col = 0; col < 3; col++) {
             camera_instrinsics.at<double>(row, col) = intrinsisc_msg.K[row * 3 + col];
         }
     }
 
     // 相机畸变参数
     distortion_coefficients = cv::Mat(1, 5, CV_64F);
-    for (int col = 0; col < 5; col++)
-    {
+    for (int col = 0; col < 5; col++) {
         distortion_coefficients.at<double>(col) = intrinsisc_msg.D[col];
     }
     // 投影系数
@@ -63,22 +59,19 @@ void PixelCloudFusion::IntrinsicsCallback(const sensor_msgs::CameraInfo &intrins
     ROS_INFO("joint_pixel_pointcloud : camera intrinsics get");
 }
 
-void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &cloud_msg)
+void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
 {
-    if (current_frame.empty() || image_frame_id == "")
-    {
+    if (current_frame.empty() || image_frame_id == "") {
         ROS_INFO("joint_pixel_pointcloud : waiting for image frame ");
         return;
     }
 
-    if (!camera_lidar_tf_ok_)
-    {
+    if (!camera_lidar_tf_ok_) {
         // 从tf树里面寻找变换关系
         camera_lidar_tf = FindTransform(image_frame_id, cloud_msg->header.frame_id);
     }
 
-    if (!camera_info_ok_ || !camera_lidar_tf_ok_)
-    {
+    if (!camera_info_ok_ || !camera_lidar_tf_ok_) {
         ROS_INFO("joint_pixel_pointcloud : waiting for camera intrinsics and camera lidar tf");
         return;
     }
@@ -95,49 +88,40 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     // 存储处理后的点云
     std::vector<pcl::PointXYZ> cam_cloud(in_cloud->points.size());
 
-    // 清空3d_bbox数据
-    for (size_t ii = 0; ii < objs.size(); ii++)
-    {
-        objs[ii].xmin_3d_bbox = objs[ii].ymin_3d_bbox = objs[ii].zmin_3d_bbox = 9999;
-        objs[ii].xmax_3d_bbox = objs[ii].ymax_3d_bbox = objs[ii].zmax_3d_bbox = 0;
-    }
-
-    for (size_t i = 0; i < in_cloud->points.size(); i++)
-    {
+    for (size_t i = 0; i < in_cloud->points.size(); i++) {
         cam_cloud[i] = TransformPoint(in_cloud->points[i], camera_lidar_tf);
         transformed_cloud->points.push_back(cam_cloud[i]);
         // 使用相机内参将三维空间点投影到像素平面
         int col = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
         int row = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
 
-        if ((col >= 0) && (col < image_size.width) &&
-            (row >= 0) && (row < image_size.height) &&
-            cam_cloud[i].z > 0)
-        {
+        if ((col >= 0) && (col < image_size.width) && (row >= 0) && (row < image_size.height) && cam_cloud[i].z > 0) {
             colored_3d_point.x = cam_cloud[i].x;
             colored_3d_point.y = cam_cloud[i].y;
             colored_3d_point.z = cam_cloud[i].z;
 
             cv::Vec3b rgb_pixel = current_frame.at<cv::Vec3b>(row, col);
-            colored_3d_point.r = rgb_pixel[2]*2;
-            colored_3d_point.g = rgb_pixel[1]*2;
-            colored_3d_point.b = rgb_pixel[0]*2;
+            colored_3d_point.r = rgb_pixel[2] * 2;
+            colored_3d_point.g = rgb_pixel[1] * 2;
+            colored_3d_point.b = rgb_pixel[0] * 2;
             out_cloud->points.push_back(colored_3d_point);
-            // ROS_INFO("%d, %d, %d", i, col, row);
         }
 
-        for (size_t j = 0; j < objs.size(); j++)
-        {
-            if ((col < objs[j].xmax) && (col > objs[j].xmin) && (row > objs[j].ymin) && (row < objs[j].ymax) && (cam_cloud[i].z > 0))
-            {
-                objs[j].xmin_3d_bbox = cam_cloud[i].x < objs[j].xmin_3d_bbox ? cam_cloud[i].x : objs[j].xmin_3d_bbox;
-                objs[j].ymin_3d_bbox = cam_cloud[i].y < objs[j].ymin_3d_bbox ? cam_cloud[i].y : objs[j].ymin_3d_bbox;
-                objs[j].zmin_3d_bbox = cam_cloud[i].z < objs[j].zmin_3d_bbox ? cam_cloud[i].z : objs[j].zmin_3d_bbox;
-                objs[j].xmax_3d_bbox = cam_cloud[i].x > objs[j].xmax_3d_bbox ? cam_cloud[i].x : objs[j].xmax_3d_bbox;
-                objs[j].ymax_3d_bbox = cam_cloud[i].y > objs[j].ymax_3d_bbox ? cam_cloud[i].y : objs[j].ymax_3d_bbox;
-                objs[j].zmax_3d_bbox = cam_cloud[i].z > objs[j].zmax_3d_bbox ? cam_cloud[i].z : objs[j].zmax_3d_bbox;
+        for (size_t j = 0; j < objs.size(); j++) {
+            if ((col < objs[j].xmax) && (col > objs[j].xmin) && (row > objs[j].ymin) && (row < objs[j].ymax) && (cam_cloud[i].z > 0)) {
+                objs[j].pc->points.push_back(cam_cloud[i]);
             }
         }
+    }
+
+    double cluster_dis_table[10] = { 5, 8, 10, 2, 2, 2, 2, 3, 10 };
+
+    for (size_t k = 0; k < objs.size(); k++) {
+        removeOutlier(objs[k], cluster_dis_table[objs[k].category - 1]);
+    }
+
+    for (size_t m = 0; m < objs.size(); m++) {
+        calObstacleInfo(objs[m]);
     }
 
     publishObjs();
@@ -151,6 +135,71 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
     pcl::toROSMsg(*out_cloud, out_cloud_msg);
     out_cloud_msg.header = cloud_msg->header;
     pub_fusion_cloud.publish(out_cloud_msg);
+}
+
+void PixelCloudFusion::calObstacleInfo(Object& in_detect_obj)
+{
+    in_detect_obj.xmin_3d_bbox = DBL_MAX;
+    in_detect_obj.xmax_3d_bbox = -DBL_MAX;
+    in_detect_obj.ymin_3d_bbox = DBL_MAX;
+    in_detect_obj.ymax_3d_bbox = -DBL_MAX;
+    in_detect_obj.zmin_3d_bbox = DBL_MAX;
+    in_detect_obj.zmax_3d_bbox = -DBL_MAX;
+
+    for (size_t j = 0; j < in_detect_obj.pc->points.size(); j++) {
+        pcl::PointXYZ p = in_detect_obj.pc->points[j];
+        objs[j].xmin_3d_bbox = p.x < objs[j].xmin_3d_bbox ? p.x : objs[j].xmin_3d_bbox;
+        objs[j].ymin_3d_bbox = p.y < objs[j].ymin_3d_bbox ? p.y : objs[j].ymin_3d_bbox;
+        objs[j].zmin_3d_bbox = p.z < objs[j].zmin_3d_bbox ? p.z : objs[j].zmin_3d_bbox;
+        objs[j].xmax_3d_bbox = p.x > objs[j].xmax_3d_bbox ? p.x : objs[j].xmax_3d_bbox;
+        objs[j].ymax_3d_bbox = p.y > objs[j].ymax_3d_bbox ? p.y : objs[j].ymax_3d_bbox;
+        objs[j].zmax_3d_bbox = p.z > objs[j].zmax_3d_bbox ? p.z : objs[j].zmax_3d_bbox;
+    }
+}
+
+void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cluster_dis)
+{
+    double cluster_min_points = 10;
+    double cluster_max_points = 100000;
+
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2d(new pcl::PointCloud<pcl::PointXYZ>);
+
+    pcl::copyPointCloud(*in_detect_obj.pc, *cloud_2d);
+
+    for (size_t i = 0; i < cloud_2d->points.size(); i++) {
+        cloud_2d->points[i].z = 0;
+    }
+
+    tree->setInputCloud(cloud_2d);
+    std::vector<pcl::PointIndices> cluster_indices;
+
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> euc;
+
+    euc.setClusterTolerance(max_cluster_dis);
+    euc.setMinClusterSize(cluster_min_points);
+    euc.setMaxClusterSize(cluster_max_points);
+    euc.setSearchMethod(tree);
+    euc.setInputCloud(cloud_2d);
+    euc.extract(cluster_indices);
+
+    double best_cluser_index = 0;
+    double cluster_points_maxnum = 0;
+    for (size_t i = 0; i < cluster_indices.size(); i++) {
+        if (cluster_indices[i].indices.size() > cluster_points_maxnum) {
+            cluster_points_maxnum = cluster_indices[i].indices.size();
+            best_cluser_index = i;
+        }
+    }
+    pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud;
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
+    extract.setInputCloud(in_detect_obj.pc);
+    extract.setIndices(boost::shared_ptr<::pcl::PointIndices>(&cluster_indices[best_cluser_index]));
+    extract.setNegative(false); // true removes the indices, false leaves only the indices
+    extract.filter(*out_cloud);
+
+    in_detect_obj.pc = out_cloud;
 }
 
 void PixelCloudFusion::publishObjs()
@@ -168,8 +217,7 @@ void PixelCloudFusion::publishObjs()
     obj_marker.color.a = 0.8;
     obj_marker.lifetime = ros::Duration(0.1);
 
-    for (size_t k = 0; k < objs.size(); k++)
-    {
+    for (size_t k = 0; k < objs.size(); k++) {
         obj_marker.id = k;
         category_deal(obj_marker, objs[k]);
         obj_marker.pose.position.x = (objs[k].xmin_3d_bbox + objs[k].xmax_3d_bbox) / 2;
@@ -207,94 +255,35 @@ void PixelCloudFusion::publishObjs()
     objs_pub_rviz.publish(objs_marker);
 }
 
-void PixelCloudFusion::category_deal(visualization_msgs::Marker &objmarker, Object &obj)
+void PixelCloudFusion::category_deal(visualization_msgs::Marker& objmarker, Object& obj)
 {
-    // car
-    if (obj.category == 1)
-    {
-        objmarker.color.b = 1;
-        objmarker.color.g = 0;
-        objmarker.color.r = 0;
-        objmarker.scale.z = 1;
-    }
-    // truck
-    if (obj.category == 2)
-    {
-        objmarker.color.b = 0;
-        objmarker.color.g = 1;
-        objmarker.color.r = 0;
-        objmarker.scale.z = 2;
-    }
-    // bus
-    if (obj.category == 3)
-    {
-        objmarker.color.b = 0;
-        objmarker.color.g = 0;
-        objmarker.color.r = 1;
-        objmarker.scale.z = 2;
-    }
-    // bicycle
-    if (obj.category == 4)
-    {
-        objmarker.color.b = 1;
-        objmarker.color.g = 1;
-        objmarker.color.r = 0;
-        objmarker.scale.z = 0.5;
-    }
-    // pedestrian
-    if (obj.category == 5)
-    {
-        objmarker.color.b = 1;
-        objmarker.color.g = 1;
-        objmarker.color.r = 1;
-        objmarker.scale.z = 0.3;
-    }
-    // cyclist
-    if (obj.category == 6)
-    {
-        objmarker.color.b = 1;
-        objmarker.color.g = 0;
-        objmarker.color.r = 1;
-        objmarker.scale.z = 0.5;
-    }
-    // traffic_signs
-    if (obj.category == 7)
-    {
-        objmarker.color.b = 0.5;
-        objmarker.color.g = 0.2;
-        objmarker.color.r = 0.4;
-        objmarker.scale.z = 0.1;
-    }
-    // info_signs
-    if (obj.category == 8)
-    {
-        objmarker.color.b = 1;
-        objmarker.color.g = 0.2;
-        objmarker.color.r = 0.7;
-        objmarker.scale.z = 0.1;
-    }
-    // special
-    if (obj.category == 9)
-    {
-        objmarker.color.b = 0.3;
-        objmarker.color.g = 0.2;
-        objmarker.color.r = 0.9;
-        objmarker.scale.z = 0.5;
-    }
-    if (obj.category == 10)
-    {
-        objmarker.color.b = 0.5;
-        objmarker.color.g = 0.8;
-        objmarker.color.r = 0.3;
-        objmarker.scale.z = 0.1;
+    double colors_table[10][4] = {
+        { 1, 0, 0, 1 }, // car
+        { 0, 1, 0, 2 }, // truck
+        { 0, 0, 1, 2 }, // bus
+        { 0, 0, 1, 2 }, // bicycle
+        { 1, 1, 1, 0.3 }, // pedestrian
+        { 1, 0, 1, 0.5 }, // cyclist
+        { 0.5, 0.2, 0.4, 0.1 }, // traffic_signs
+        { 1, 0.2, 0.7, 0.1 }, // info_signs
+        { 0.3, 0.2, 0.9, 0.5 }, // special
+        { 0.5, 0.8, 0.3, 0.1 },
+    };
+
+    for (size_t i = 0; i < 10; i++) {
+        if (obj.category == i) {
+            objmarker.color.b = colors_table[i][0];
+            objmarker.color.g = colors_table[i][1];
+            objmarker.color.r = colors_table[i][2];
+            // objmarker.scale.z = colors_table[i][3];
+        }
     }
 }
 
-void PixelCloudFusion::DetectionCallback(const yunle_sensor_msgs::DetectObjs &objs_msg)
+void PixelCloudFusion::DetectionCallback(const yunle_sensor_msgs::DetectObjs& objs_msg)
 {
     objs.clear();
-    for (size_t i = 0; i < objs_msg.objs.size(); i++)
-    {
+    for (size_t i = 0; i < objs_msg.objs.size(); i++) {
         Object obj;
         obj.category = objs_msg.objs[i].category;
         obj.obj_deg = objs_msg.objs[i].obj_deg;
@@ -312,30 +301,27 @@ void PixelCloudFusion::DetectionCallback(const yunle_sensor_msgs::DetectObjs &ob
     }
 }
 
-tf::StampedTransform PixelCloudFusion::FindTransform(const std::string &target_frame, const std::string source_frame)
+tf::StampedTransform PixelCloudFusion::FindTransform(const std::string& target_frame, const std::string source_frame)
 {
     tf::StampedTransform transform;
 
     camera_lidar_tf_ok_ = false;
 
-    try
-    {
+    try {
         // ros::Time(0)指定了时间为0，即获得最新有效的变换。
         // 改变获取当前时间的变换，即改为ros::Time::now(),不过now的话因为监听器有缓存区的原因。一般会出错
         // 参考：https://www.ncnynl.com/archives/201702/1313.html
         transform_listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
         camera_lidar_tf_ok_ = true;
         ROS_INFO("joint_pixel_pointcloud : camera-lidar-tf obtained");
-    }
-    catch (tf::TransformException ex)
-    {
+    } catch (tf::TransformException ex) {
         ROS_INFO("joint_pixel_pointcloud : %s", ex.what());
     }
 
     return transform;
 }
 
-pcl::PointXYZ PixelCloudFusion::TransformPoint(const pcl::PointXYZ &in_point, const tf::StampedTransform &in_transform)
+pcl::PointXYZ PixelCloudFusion::TransformPoint(const pcl::PointXYZ& in_point, const tf::StampedTransform& in_transform)
 {
     tf::Vector3 tf_point(in_point.x, in_point.y, in_point.z);
     tf::Vector3 tf_point_transformed = in_transform * tf_point;
@@ -362,10 +348,11 @@ void PixelCloudFusion::initROS()
     objs_pub = nh.advertise<smartcar_msgs::DetectedObjectArray>("one_obj", 1);
 }
 
-PixelCloudFusion::PixelCloudFusion() : nh_private("~"),
-                                       camera_lidar_tf_ok_(false),
-                                       camera_info_ok_(false),
-                                       image_frame_id("")
+PixelCloudFusion::PixelCloudFusion()
+    : nh_private("~")
+    , camera_lidar_tf_ok_(false)
+    , camera_info_ok_(false)
+    , image_frame_id("")
 {
     initROS();
 }
