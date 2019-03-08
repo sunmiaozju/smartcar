@@ -1,11 +1,3 @@
-/*
- * @Description: 
- * @Author: sunm
- * @Github: https://github.com/sunmiaozju
- * @LastEditors: sunm
- * @Date: 2019-02-28 22:03:11
- * @LastEditTime: 2019-02-28 22:03:15
- */
 #ifndef __NDT_LOCALZATION__
 #define __NDT_LOCALZATION__
 
@@ -45,6 +37,7 @@
 
 #include "user_protocol.h"
 #include "utils.hpp"
+#include "ground_filter.hpp"
 
 #define METHOD_PCL 0
 #define METHOD_CUDA 1
@@ -176,6 +169,9 @@ private:
   nav_msgs::Odometry msg_rawodom_;
 
   std::string map_file;
+  bool is_filter_ground;
+  utils::RayGroundFilter filter;
+  ros::Publisher pub_localPC_handled;
 
   bool load_map(std::string map_file);
 

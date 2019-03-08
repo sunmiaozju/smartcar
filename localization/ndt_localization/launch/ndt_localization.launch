@@ -1,5 +1,9 @@
 <launch>
-  <include file="$(find static_tf)/launch/static_tf.launch" />
+  <!-- <param name="use_sim_time" value="true" type="bool"/> -->
+
+  <node pkg="tf" type="static_transform_publisher" name="base2laser" args="0.17 0 0.185 0 0 0 1 /base_link /velodyne 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base2imu" args="0.105 0.16 0.17 0 0 0 1 /base_link /base_imu_link 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base2rr" args="-0.178 -0.178 -0.165 0 0 0 1 /base_link /wheel_rr 100" />
 
   <node pkg="map_server" type="map_server" name="global_cost_map_node" args="$(find static_map)/map_file/map.yaml"/>
 

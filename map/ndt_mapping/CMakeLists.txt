@@ -11,8 +11,7 @@ if (CUDA_FOUND)
 	include_directories(${CUDA_INCLUDE_DIRS})
 endif ()
 include_directories(include)
-
-
+# link_directories(lib)
 string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
 link_directories(${LIBRARY_DIRS})  # 可以将libgpu_ndt.so加到这个路径里，然后就可以链接到了
 
@@ -21,9 +20,9 @@ find_package(Eigen3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
 	roscpp
-    nav_msgs
-    pcl_conversions
-    sensor_msgs
+  nav_msgs
+  pcl_conversions
+  sensor_msgs
 	tf
 	std_msgs
 	geometry_msgs
@@ -45,13 +44,14 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ../../common/utils/include
 )
 
 
-add_executable(fast_ndt_mapping_node src/fast_ndt_mapping_node.cpp src/LidarMapping.cpp
-include/fast_ndt_mapping/LidarMapping.h)
+add_executable(fast_ndt_mapping_node src/fast_ndt_mapping_node.cpp src/LidarMapping.cpp)
 target_link_libraries(fast_ndt_mapping_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(fast_ndt_mapping_node ndt_cpu pcl_omp_registration)
+
 if (CUDA_FOUND)
 	target_link_libraries(fast_ndt_mapping_node ndt_gpu)
 endif ()

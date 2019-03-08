@@ -40,9 +40,12 @@
 #include <pcl_omp_registration/ndt.h>  // if USE_PCL_OPENMP
 
 #include <ctime>
+#include "ground_filter.hpp"
+// #include "filter_ground.h"
 
 namespace FAST_NDT{
 	using PointI = pcl::PointXYZI;
+	using Point = pcl::PointXYZ;
 
 	struct pose{
 		double x;
@@ -146,8 +149,8 @@ namespace FAST_NDT{
 		double current_velocity_imu_y;
 		double current_velocity_imu_z;
 
-		pcl::PointCloud<pcl::PointXYZI> map;  // 此处定义地图  --用于ndt匹配
-		pcl::PointCloud<pcl::PointXYZI> global_map;  // 此处为构建打全局地图
+		pcl::PointCloud<Point> map;  // 此处定义地图  --用于ndt匹配
+		pcl::PointCloud<Point> global_map;  // 此处为构建打全局地图
 		// pcl::PointCloud<pcl::PointXYZI> target_map;
 		double param_global_voxel_leafsize;
 		double param_min_update_target_map;
@@ -155,8 +158,8 @@ namespace FAST_NDT{
 		double param_extract_width;
 		bool param_visualize;
 
-		pcl::NormalDistributionsTransform<pcl::PointXYZI, pcl::PointXYZI> pcl_ndt;
-		cpu::NormalDistributionsTransform<pcl::PointXYZI, pcl::PointXYZI> cpu_ndt;  // cpu方式  --可以直接调用吗??可以
+		pcl::NormalDistributionsTransform<Point, Point> pcl_ndt;
+		cpu::NormalDistributionsTransform<Point, Point> cpu_ndt;  // cpu方式  --可以直接调用吗??可以
 #ifdef CUDA_FOUND
 		gpu::GNormalDistributionsTransform gpu_ndt;
 		// TODO:此处增加共享内存方式的gpu_ndt_ptr
@@ -165,7 +168,7 @@ namespace FAST_NDT{
 //#ifdef USE_PCL_OPENMP  // 待查证使用方法
 //		static pcl_omp::NormalDistributionsTransform<pcl::PointXYZI, pcl::PointXYZI> omp_ndt;
 //#endif
-		pcl_omp::NormalDistributionsTransform<pcl::PointXYZI, pcl::PointXYZI> omp_ndt;
+		pcl_omp::NormalDistributionsTransform<Point, Point> omp_ndt;
 
 		// Default values  // 公共ndt参数设置
 		int max_iter;        // Maximum iterations
@@ -193,6 +196,21 @@ namespace FAST_NDT{
 		std::string _imu_topic;  // 定义imu消息的topic
 		std::string _odom_topic;
 		std::string _lidar_topic;
+
+		bool is_publish_map_full;
+		bool is_publish_map_filterd_ground;
+		bool is_publish_map_for_costmap;
+
+		utils::RayGroundFilter filter;
+		pcl::PointCloud<Point> global_map_no_ground;
+		ros::Publisher pub_global_map_no_ground;
+		pcl::PointCloud<Point> global_map_for_costmap;
+		ros::Publisher pub_global_map_for_costmap;
+
+		bool is_publish_map_for_vectormap;
+		pcl::PointCloud<Point> map_for_vectormap;
+		ros::Publisher pub_map_for_vectormap;
+
 
 		// end:private
 
@@ -223,7 +241,6 @@ namespace FAST_NDT{
 
 			initial_scan_loaded = 0;  // 用以确定是否为第一帧点云(第一帧点云不做匹配,直接添加到地图中去)
 		}// end:Construct LidarMapping(){};
-
 
 		void param_initial(ros::NodeHandle &nh,ros::NodeHandle &private_handle);
 

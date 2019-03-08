@@ -1,0 +1,9 @@
+<launch>
+    <node pkg="filter_global_ground" type="filter_global_ground" name="filter_global_ground" output="screen">
+        <param name="lidar_topic" value="/points_no_ground"/>
+        <param name="lidar_frame" value="velodyne"/>
+    </node>
+
+
+
+</launch>

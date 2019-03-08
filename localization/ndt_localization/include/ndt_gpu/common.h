@@ -1,11 +1,3 @@
-/*
- * @Description: 
- * @Author: sunm
- * @Github: https://github.com/sunmiaozju
- * @LastEditors: sunm
- * @Date: 2019-02-28 22:13:15
- * @LastEditTime: 2019-02-28 22:13:15
- */
 #ifndef GPU_COMMON_H_
 #define GPU_COMMON_H_
 

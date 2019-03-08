@@ -4,7 +4,7 @@
     <!-- <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" /> -->
     <!-- <include file="$(find razor_imu_9dof)/launch/razor_pub.launch" /> --> -->
 
-    <!-- <param name="use_sim_time" value="true" type="bool"/> -->
+    <param name="use_sim_time" value="false" type="bool"/>
 
     <node pkg="ndt_mapping" type="fast_ndt_mapping_node" name="fast_ndt_mapping_node" output="screen">
         <rosparam file="$(find ndt_mapping)/params/params_ndt_mapping.yaml" command="load"/>

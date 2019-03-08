@@ -75,6 +75,8 @@ namespace FAST_NDT{
 		privateHandle.param<bool>("incremental_voxel_update",_incremental_voxel_update,true);
 		std::cout << "incremental_voxel_update: "<< _incremental_voxel_update <<std::endl;  // 是否在cpu_ndt里做update????
 
+		privateHandle.param<bool>("is_publish_map_for_vectormap",is_publish_map_for_vectormap,false);
+		if(is_publish_map_for_vectormap){ROS_WARN_STREAM("Will publish map for vector map");}
 //		!! 注意自定义类型格式在获取参数时的实现方式 !!
 		int method_type_temp;
 		privateHandle.param<int>("ndt_method_type",method_type_temp,1);
@@ -94,7 +96,7 @@ namespace FAST_NDT{
 				std::cout << ">> Use OMP NDT <<" << std::endl;
 				break;
 			default:
-				ROS_ERROR("Invalid method type of NDT");
+				ROS_ERROR_STREAM("Invalid method type of NDT");
 				exit(1);
 		}
 		std::cout << std::endl;
@@ -102,13 +104,13 @@ namespace FAST_NDT{
 		tf::StampedTransform transform;
 		try{
 			ros::Time now = ros::Time::now();
-			ROS_INFO("now:%f listen from static_tf and set tf_btol");
+			ROS_INFO_STREAM("now:%f listen from static_tf and set tf_btol");
 			tf_listener.waitForTransform(param_base_frame,param_laser_frame,ros::Time(0),ros::Duration(param_tf_timeout * 10), ros::Duration(param_tf_timeout / 3));
 			tf_listener.lookupTransform(param_base_frame,param_laser_frame,ros::Time(0),transform);
-			ROS_INFO("success listen from tf");
+			ROS_INFO_STREAM("success listen from tf");
 		}
 		catch(const tf::TransformException &ex){
-			ROS_ERROR("Error waiting for tf in init: %s",ex.what());
+			ROS_ERROR_STREAM("Error waiting for tf in init: %s",ex.what());
 			return;
 		}
 		Eigen::Translation3f tl_btol(transform.getOrigin().getX(),transform.getOrigin().getY(),transform.getOrigin().getZ());
@@ -220,7 +222,25 @@ namespace FAST_NDT{
 			ROS_ERROR("Please Define _method_type to conduct NDT");
 			exit(1);
 		}
-	}
+		privateHandle.param<bool>("is_publish_map_filterd_ground",is_publish_map_filterd_ground,false);
+		privateHandle.param<bool>("is_publish_map_full",is_publish_map_full,false);
+		privateHandle.param<bool>("is_publish_map_for_costmap",is_publish_map_for_costmap,false);
+
+		if(is_publish_map_for_costmap){
+			std::cout << "Will publish map for costmap." << std::endl;
+			// if(!filter.init_param()){
+			// 	ROS_WARN("Can not init filter_ground params(in ndt_mapping), exit.");
+			// 	exit(1);
+			// }
+		}
+		if(is_publish_map_full){
+			std::cout << "Will publish full map." << std::endl;
+		}
+		if(is_publish_map_filterd_ground){
+			std::cout << "Will publish map with ground filtered." << std::endl;
+		}
+
+	}// end init_params
 
 	void LidarMapping::imu_odom_calc(ros::Time current_time) {
 		static ros::Time previous_time = current_time;
@@ -446,10 +466,10 @@ namespace FAST_NDT{
 	void LidarMapping::points_callback(const sensor_msgs::PointCloud2::ConstPtr &input) {
 		ros::Time test_time_1 = ros::Time::now();  // TODO: 
 		double r;
-		pcl::PointXYZI p;
-		pcl::PointCloud<pcl::PointXYZI> tmp, scan;
-		pcl::PointCloud<pcl::PointXYZI>::Ptr filtered_scan_ptr(new pcl::PointCloud<pcl::PointXYZI>());
-		pcl::PointCloud<pcl::PointXYZI>::Ptr transformed_scan_ptr(new pcl::PointCloud<pcl::PointXYZI>());
+		Point p;
+		pcl::PointCloud<Point> tmp, scan;
+		pcl::PointCloud<Point>::Ptr filtered_scan_ptr(new pcl::PointCloud<Point>());
+		pcl::PointCloud<Point>::Ptr transformed_scan_ptr(new pcl::PointCloud<Point>());
 		tf::Quaternion q;
 
 		Eigen::Matrix4f t_localizer(Eigen::Matrix4f::Identity()); //
@@ -463,13 +483,14 @@ namespace FAST_NDT{
 		pcl::fromROSMsg(*input,tmp);
 
 		for (auto point:tmp.points){
+			// if(point.x > -7 && point.x < 0 && point.y > -1 && point.y < 1) continue;
 			r = std::sqrt(pow(point.x,2.0) + pow(point.y,2.0));
 			if (min_scan_range < r && r < max_scan_range){
 				scan.points.push_back(point);
 			}
 		}
 
-		pcl::PointCloud<pcl::PointXYZI>::Ptr scan_ptr(new pcl::PointCloud<pcl::PointXYZI>(scan));  // scan保存到scan_ptr中
+		pcl::PointCloud<Point>::Ptr scan_ptr(new pcl::PointCloud<Point>(scan));  // scan保存到scan_ptr中
 
 		ndt_start = ros::Time::now();  // ndt start time recorder
 		if(initial_scan_loaded == 0){
@@ -480,7 +501,7 @@ namespace FAST_NDT{
 		}
 
 		// Apply voxelgrid filter  // 对scan_ptr进行降采样
-		pcl::VoxelGrid<pcl::PointXYZI> voxel_grid_filter;
+		pcl::VoxelGrid<Point> voxel_grid_filter;
 		voxel_grid_filter.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
 		voxel_grid_filter.setInputCloud(scan_ptr);
 		voxel_grid_filter.filter(*filtered_scan_ptr);
@@ -489,7 +510,7 @@ namespace FAST_NDT{
 
 		// map_ptr是map的一个指针
 		// TODO:即map_ptr只是指向map,而并不是将map进行了拷贝
-		pcl::PointCloud<pcl::PointXYZI>::Ptr map_ptr(new pcl::PointCloud<pcl::PointXYZI>(map));  // 重要作用,用以保存降采样后的全局地图
+		pcl::PointCloud<Point>::Ptr map_ptr(new pcl::PointCloud<Point>(map));  // 重要作用,用以保存降采样后的全局地图
 
 		if(_method_type == MethodType::use_pcl){
 			// pcl_ndt.setTransformationEpsilon(trans_eps);
@@ -587,7 +608,7 @@ namespace FAST_NDT{
 		d3 = t3_end - t3_start;
 
 		// 用以保存ndt转换后的点云,align参数
-		pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+		pcl::PointCloud<Point>::Ptr output_cloud(new pcl::PointCloud<Point>);
 		
 		if (_method_type == MethodType::use_pcl)
 		{
@@ -626,7 +647,7 @@ namespace FAST_NDT{
 		ros::Time test_time_4 = ros::Time::now();  // TODO:
 		
 		if(final_num_iteration > 20){
-			ROS_ERROR("too much iteration !");
+			ROS_ERROR_STREAM("too much iteration !");
 			return;
 		}
 
@@ -755,20 +776,13 @@ namespace FAST_NDT{
 
 		// Calculate the shift between added_pos and current_pos // 以确定是否更新全局地图
 		// added_pose将一直定位于localMap的原点
-		// ################################################################################
+		// ###############################################################################
+
+
 		ros::Time test_time_5 = ros::Time::now();  // TODO:
 		double shift = sqrt(pow(current_pose.x - added_pose.x, 2.0) + pow(current_pose.y - added_pose.y, 2.0));
 		if (shift >= min_add_scan_shift)
 		{
-			pcl::PointCloud<pcl::PointXYZI>::Ptr to_map(new pcl::PointCloud<pcl::PointXYZI>());
-			pcl::PointCloud<pcl::PointXYZI>::Ptr to_globalmap(new pcl::PointCloud<pcl::PointXYZI>());
-
-			pcl::VoxelGrid<pcl::PointXYZI> voxel_grid_filter_tomap;  // filter to matching-map
-			voxel_grid_filter_tomap.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
-			voxel_grid_filter_tomap.setInputCloud(transformed_scan_ptr);
-			voxel_grid_filter_tomap.filter(*to_map);
-			
-			map += *to_map;
 			added_pose.x = current_pose.x;
 			added_pose.y = current_pose.y;
 			added_pose.z = current_pose.z;
@@ -776,11 +790,100 @@ namespace FAST_NDT{
 			added_pose.pitch = current_pose.pitch;
 			added_pose.yaw = current_pose.yaw;
 
-			pcl::VoxelGrid<pcl::PointXYZI> global_voxel_grid_filter_tomap;  // filter to global-map(for save)
-			voxel_grid_filter_tomap.setLeafSize(param_global_voxel_leafsize, param_global_voxel_leafsize, param_global_voxel_leafsize);
+			pcl::PointCloud<Point>::Ptr to_map(new pcl::PointCloud<Point>());
+			pcl::VoxelGrid<Point> voxel_grid_filter_tomap;  // filter to matching-map
+			voxel_grid_filter_tomap.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
 			voxel_grid_filter_tomap.setInputCloud(transformed_scan_ptr);
-			voxel_grid_filter_tomap.filter(*to_globalmap);
-			global_map += *to_globalmap;
+			voxel_grid_filter_tomap.filter(*to_map);
+			map += *to_map;
+			
+			if(is_publish_map_full){
+				pcl::PointCloud<Point>::Ptr to_globalmap(new pcl::PointCloud<Point>());
+				pcl::VoxelGrid<Point> global_voxel_grid_filter_tomap;  // filter to global-map(for save)
+				voxel_grid_filter_tomap.setLeafSize(param_global_voxel_leafsize, param_global_voxel_leafsize, param_global_voxel_leafsize);
+				voxel_grid_filter_tomap.setInputCloud(transformed_scan_ptr);
+				voxel_grid_filter_tomap.filter(*to_globalmap);
+				global_map += *to_globalmap;
+				sensor_msgs::PointCloud2::Ptr msg_globalmap_ptr(new sensor_msgs::PointCloud2);
+				pcl::toROSMsg(global_map, *msg_globalmap_ptr);
+				refiltered_map_pub.publish(*msg_globalmap_ptr);  
+			}
+
+			if(is_publish_map_for_costmap){
+				filter.setIfClipHeight(true);
+				pcl::PointCloud<Point>::Ptr local_no_ground(new pcl::PointCloud<Point>());
+				pcl::PointCloud<Point>::Ptr to_globalmap_for_costmap(new pcl::PointCloud<Point>());
+				filter.convert(scan_ptr,local_no_ground);
+
+				pcl::transformPointCloud(*local_no_ground, *to_globalmap_for_costmap, t_localizer);
+
+				// pcl::PointCloud<Point>::Ptr temp(new pcl::PointCloud<Point>());
+				// pcl::VoxelGrid<Point> voxel1;  // filter to matching-map
+				// voxel1.setLeafSize(0.5, 0.5, 0.5);
+				// voxel1.setInputCloud(local_no_ground);
+				// voxel1.filter(*temp);
+				// pcl::transformPointCloud(*temp, *to_globalmap_for_costmap, t_localizer);
+
+				global_map_for_costmap += *to_globalmap_for_costmap;
+
+				sensor_msgs::PointCloud2::Ptr msg_map_ptr(new sensor_msgs::PointCloud2);
+				pcl::toROSMsg(global_map_for_costmap,*msg_map_ptr);
+				pub_global_map_for_costmap.publish(*msg_map_ptr);
+			}
+			
+			if(is_publish_map_filterd_ground){
+				filter.setIfClipHeight(false);
+				pcl::PointCloud<Point>::Ptr local_no_ground(new pcl::PointCloud<Point>());
+				pcl::PointCloud<Point>::Ptr to_globalmap_no_ground(new pcl::PointCloud<Point>());
+				filter.convert(scan_ptr,local_no_ground);
+
+				pcl::transformPointCloud(*local_no_ground, *to_globalmap_no_ground, t_localizer);
+
+				// pcl::PointCloud<Point>::Ptr temp(new pcl::PointCloud<Point>());
+				// pcl::VoxelGrid<Point> voxel1;  // filter to matching-map
+				// voxel1.setLeafSize(param_global_voxel_leafsize, param_global_voxel_leafsize, param_global_voxel_leafsize);
+				// voxel1.setInputCloud(local_no_ground);
+				// voxel1.filter(*temp);
+
+				// pcl::transformPointCloud(*temp, *to_globalmap_no_ground, t_localizer);
+
+				global_map_no_ground += *to_globalmap_no_ground;
+
+				sensor_msgs::PointCloud2::Ptr msg_debug_map_ptr(new sensor_msgs::PointCloud2);
+				pcl::toROSMsg(global_map_no_ground,*msg_debug_map_ptr);
+				pub_global_map_no_ground.publish(*msg_debug_map_ptr);
+			}
+
+			if(is_publish_map_for_vectormap){
+				pcl::PointCloud<Point>::Ptr clip_above(new pcl::PointCloud<Point>());
+				clip_above->points.clear();
+				pcl::PointCloud<Point>::Ptr map_out_ptr(new pcl::PointCloud<Point>());
+				map_out_ptr->points.clear();
+
+				pcl::PointCloud<Point>::Ptr temp(new pcl::PointCloud<Point>());
+				pcl::VoxelGrid<Point> voxel1;  // filter to matching-map
+				voxel1.setLeafSize(0.5, 0.5, 0.5);
+				voxel1.setInputCloud(scan_ptr);
+				voxel1.filter(*temp);
+
+				pcl::PointIndices indices;
+				for(size_t i = 0 ; i < temp->points.size();i++){
+					if(temp->points[i].z > 0.5) indices.indices.push_back(i);
+				}
+				pcl::ExtractIndices<Point> extractor;
+				extractor.setInputCloud(temp);
+				extractor.setIndices(boost::make_shared<pcl::PointIndices>(indices));
+				extractor.setNegative(true); // false to save indices
+				extractor.filter(*clip_above);
+
+				pcl::transformPointCloud(*clip_above, *map_out_ptr, t_localizer);
+
+				map_for_vectormap += *map_out_ptr;		
+
+				sensor_msgs::PointCloud2::Ptr msg_map_ptr(new sensor_msgs::PointCloud2);
+				pcl::toROSMsg(map_for_vectormap,*msg_map_ptr);
+				pub_map_for_vectormap.publish(*msg_map_ptr);	
+			}
 
 			// if (_method_type == MethodType::use_pcl)
 			// 	pcl_ndt.setInputTarget(map_ptr);  // 注意:此时加入的target:map_ptr并不包括刚加入点云的transformed_scan_ptr
@@ -797,7 +900,7 @@ namespace FAST_NDT{
       		// 	omp_ndt.setInputTarget(map_ptr);
 		}// end if(shift)
 
-		pcl::PointCloud<pcl::PointXYZI>::Ptr target_map(new pcl::PointCloud<pcl::PointXYZI>());
+		pcl::PointCloud<Point>::Ptr target_map(new pcl::PointCloud<Point>());
 		if(shift >= param_min_update_target_map){
 			target_map->points.clear();
 			for(auto point:map.points){
@@ -840,11 +943,7 @@ namespace FAST_NDT{
 		// start5
 		sensor_msgs::PointCloud2::Ptr map_msg_ptr(new sensor_msgs::PointCloud2);
 		pcl::toROSMsg(*map_ptr, *map_msg_ptr);
-		matching_map_pub.publish(*map_msg_ptr);  // TODO:每一帧都发布map(全局map)
-
-		sensor_msgs::PointCloud2::Ptr msg_globalmap_ptr(new sensor_msgs::PointCloud2);
-		pcl::toROSMsg(global_map, *msg_globalmap_ptr);
-		refiltered_map_pub.publish(*msg_globalmap_ptr);  // TODO:每一帧都发布map(全局map)
+		matching_map_pub.publish(*map_msg_ptr);  // "map_for_localmatch" 每一帧都发布map(全局map)
 
 		q.setRPY(current_pose.roll, current_pose.pitch, current_pose.yaw);
 		current_pose_msg.header.frame_id = "map";
@@ -862,7 +961,7 @@ namespace FAST_NDT{
 		// end5
 
 		if(param_visualize){
-			std::cout << "-----------------------------------------------------------------" << std::endl;
+			std::cout << "---------------------------------------------" << std::endl;
 			std::cout << "Sequence number: " << input->header.seq << std::endl;
 			std::cout << "Number of scan points: " << scan_ptr->size() << " points." << std::endl;
 			std::cout << "Number of filtered scan points: " << filtered_scan_ptr->size() << " points." << std::endl;
@@ -878,13 +977,13 @@ namespace FAST_NDT{
 			std::cout << "Transformation Matrix:" << std::endl;
 			std::cout << t_localizer << std::endl;
 			std::cout << "shift: " << shift << std::endl;
-			std::cout << "1-2: " << test_time_2 - test_time_1 << "s" << "--downsample inputCloud" << std::endl;
-			std::cout << "2-3: " << test_time_3 - test_time_2 << "s" << "--set NDT params and inputSource" << std::endl;
-			std::cout << "3-4: " << test_time_4 - test_time_3 << "s" << "--handle imu/odom and cal ndt resule" << std::endl;
-			std::cout << "4-5: " << test_time_5 - test_time_4 << "s" << "--get current pose" << std::endl;
-			std::cout << "5-6: " << test_time_6 - test_time_5 << "s" << "--publish current pose" << std::endl;
+			// std::cout << "1-2: " << test_time_2 - test_time_1 << "s" << "--downsample inputCloud" << std::endl;
+			// std::cout << "2-3: " << test_time_3 - test_time_2 << "s" << "--set NDT params and inputSource" << std::endl;
+			// std::cout << "3-4: " << test_time_4 - test_time_3 << "s" << "--handle imu/odom and cal ndt resule" << std::endl;
+			// std::cout << "4-5: " << test_time_5 - test_time_4 << "s" << "--get current pose" << std::endl;
+			// std::cout << "5-6: " << test_time_6 - test_time_5 << "s" << "--publish current pose" << std::endl;
 
-			std::cout << "-----------------------------------------------------------------" << std::endl;
+			std::cout << "---------------------------------------------" << std::endl;
 		}
 
 	}
@@ -905,17 +1004,24 @@ namespace FAST_NDT{
 
 		map.header.frame_id = "map";
 		global_map.header.frame_id = "map";
+		global_map_no_ground.header.frame_id = "map";
+		global_map_for_costmap.header.frame_id = "map";
+		map_for_vectormap.header.frame_id = "map";
 
-		debug_map_pub = nh.advertise<sensor_msgs::PointCloud2>("/deug_map",1000);
-		matching_map_pub = nh.advertise<sensor_msgs::PointCloud2>("/globalmap/match_used", 1000);
-		refiltered_map_pub = nh.advertise<sensor_msgs::PointCloud2>("/globalmap/refiltered",1000);
-		current_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/current_pose", 1000);
+		debug_map_pub = private_nh.advertise<sensor_msgs::PointCloud2>("/deug_map",1000);
+		matching_map_pub = private_nh.advertise<sensor_msgs::PointCloud2>("/globalmap/map_for_localmatch", 1000);
+		refiltered_map_pub = private_nh.advertise<sensor_msgs::PointCloud2>("/globalmap/map_full",1000);
+		pub_global_map_no_ground = private_nh.advertise<sensor_msgs::PointCloud2>("/globalmap/map_no_ground",1000);
+		pub_global_map_for_costmap = private_nh.advertise<sensor_msgs::PointCloud2>("/globalmap/map_for_costmap",1000);
+		current_pose_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/current_pose", 1000);
+
+		pub_map_for_vectormap = private_nh.advertise<sensor_msgs::PointCloud2>("/globalmap/map_for_vectormap",1000);
 
 //		ros::Subscriber param_sub = nh.subscribe("config/ndt_mapping", 10, param_callback);
 //		ros::Subscriber output_sub = nh.subscribe("config/ndt_mapping_output", 10, output_callback);
-		points_sub = nh.subscribe(_lidar_topic, 1000, &LidarMapping::points_callback,this);
-		odom_sub = nh.subscribe(_odom_topic, 1000, &LidarMapping::odom_callback,this);
-		imu_sub = nh.subscribe(_imu_topic, 1000, &LidarMapping::imu_callback,this);
+		points_sub = private_nh.subscribe(_lidar_topic, 1000, &LidarMapping::points_callback,this);
+		odom_sub = private_nh.subscribe(_odom_topic, 1000, &LidarMapping::odom_callback,this);
+		imu_sub = private_nh.subscribe(_imu_topic, 1000, &LidarMapping::imu_callback,this);
 	}
 
 }

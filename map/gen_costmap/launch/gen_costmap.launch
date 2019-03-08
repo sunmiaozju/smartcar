@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="gen_costmap" type="gen_costmap" name="local_costmap_node" output="screen">
+        <remap from="/lslidar_point_cloud" to="/points_no_ground" />
+        <remap from="/global_costmap" to="/map" />
+        <rosparam file="$(find gen_costmap)/cfg/gen_costmap.yaml" command="load" />
+    </node>
+</launch>

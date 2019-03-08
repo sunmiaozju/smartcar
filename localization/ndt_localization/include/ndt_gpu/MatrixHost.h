@@ -1,11 +1,3 @@
-/*
- * @Description: 
- * @Author: sunm
- * @Github: https://github.com/sunmiaozju
- * @LastEditors: sunm
- * @Date: 2019-02-28 22:12:36
- * @LastEditTime: 2019-02-28 22:12:36
- */
 #ifndef MATRIX_HOST_H_
 #define MATRIX_HOST_H_
 
