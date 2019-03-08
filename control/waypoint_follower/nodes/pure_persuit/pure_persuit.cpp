@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 10:47:42
- * @LastEditTime: 2019-03-08 13:48:20
+ * @LastEditTime: 2019-03-08 14:15:46
  */
 // ROS Includes
 #include <ros/ros.h>
@@ -347,13 +347,10 @@ void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStam
     current_linear_velocity_ = msg->twist.linear.x;
 }
 
-void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstPtr& msg)
+void PurePursuitNode::callbackFromWayPoints(const nav_msgs::PathConstPtr& msg)
 {
     // 从way_ponits里面读取目标速度
-    if (msg->lanes[0].waypoints[0].speed_limit != 0)
-        command_linear_velocity_ = msg->lanes[0].waypoints[0].speed_limit;
-    else
-        command_linear_velocity_ = 1; //  1m/s
+    command_linear_velocity_ = 1; //  1m/s
 
     // 从消息中保存下载way_points
     for (size_t i = 0; i < msg->poses.size(); i++) {
@@ -362,7 +359,7 @@ void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneArrayConstP
         p.pose.pose.position.y = msg->poses[i].pose.position.y;
         p.pose.pose.position.z = msg->poses[i].pose.position.z;
         // p.a = 1.0;
-        p.a = tf::getYaw(msg->poses[i].pose.orientation);
+        p.yaw = tf::getYaw(msg->poses[i].pose.orientation);
         current_waypoints_.push_back(p);
     }
 

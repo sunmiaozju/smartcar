@@ -1,0 +1,17 @@
+<launch>
+    <node pkg="lidar_detector" type="lidar_euclidean_cluster_node" name="lidar_euclidean_cluster_node" output="screen">
+        <param name="small_scale" value="1.0"/>
+        <param name="large_scale" value="2.0"/>
+        <param name="angle_threshold" value="0.1"/>
+        <param name="floor_max_angle" value="0.2"/>
+        <param name="floor_max_height" value="0.1"/>
+        <param name="sensor_height" value="0.37"/>
+        <param name="local_threshold_slope" value="5.0"/>
+        <param name="general_threshold_slope" value="3.0"/>
+        <param name="height_threshhold" value="4.0"/>
+        <param name="downsampleLeafSize" value="0.2"/>
+        <param name="nearDistance" value="1.0"/>
+        <param name="farDistance" value="15"/>
+
+    </node>
+</launch>

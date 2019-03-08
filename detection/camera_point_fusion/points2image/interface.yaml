@@ -1,0 +1,4 @@
+- name: /points2image
+  publish: [/points_image]
+  subscribe: [/points_raw, /projection_matrix, /camera/camera_info]
+
