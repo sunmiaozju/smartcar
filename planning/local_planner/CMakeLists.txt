@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     smartcar_msgs
     sensor_msgs
-    vector_map_msgs
     tf
 )
 

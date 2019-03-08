@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-01 11:26:40
- * @LastEditTime: 2019-03-06 21:28:08
+ * @LastEditTime: 2019-03-08 14:59:51
  */
 #ifndef LIDAR_EUCLIDEAN_CLUSTER_H
 #define LIDAR_EUCLIDEAN_CLUSTER_H
@@ -29,7 +29,8 @@
 #include <pcl_ros/point_cloud.h>
 
 #include <sensor_msgs/PointCloud2.h>
-// #include
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include "cluster.h"
 

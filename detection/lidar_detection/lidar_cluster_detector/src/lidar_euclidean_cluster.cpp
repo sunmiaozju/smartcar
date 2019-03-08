@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-01 11:25:55
- * @LastEditTime: 2019-03-06 10:18:47
+ * @LastEditTime: 2019-03-08 14:57:10
  */
 
 #include "lidar_euclidean_cluster.h"
@@ -474,9 +474,9 @@ void LidarClusterDetector::splitString(const std::string& in_string, std::vector
     }
 }
 
-void pubClusters(const std::vector<ClusterPtr> &in_clusters,
-        const ros::Publisher& pub){
- 
-        }
+void pubClusters(const std::vector<ClusterPtr>& in_clusters,
+    const ros::Publisher& pub)
+{
+}
 
 } // namespace LidarDetector
