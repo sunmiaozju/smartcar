@@ -65,7 +65,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
         ROS_INFO("joint_pixel_pointcloud : waiting for image frame ");
         return;
     }
-
+    
     if (!camera_lidar_tf_ok_) {
         // 从tf树里面寻找变换关系
         camera_lidar_tf = FindTransform(image_frame_id, cloud_msg->header.frame_id);
@@ -75,26 +75,27 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
         ROS_INFO("joint_pixel_pointcloud : waiting for camera intrinsics and camera lidar tf");
         return;
     }
-
+    
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*cloud_msg, *in_cloud);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     out_cloud->points.clear();
-
     pcl::PointXYZRGB colored_3d_point;
-
+    for (size_t k = 0; k < objs.size(); k++) {
+        objs[k].pc.points.clear();
+    }
+    
     // 存储处理后的点云
     std::vector<pcl::PointXYZ> cam_cloud(in_cloud->points.size());
-
     for (size_t i = 0; i < in_cloud->points.size(); i++) {
         cam_cloud[i] = TransformPoint(in_cloud->points[i], camera_lidar_tf);
         transformed_cloud->points.push_back(cam_cloud[i]);
         // 使用相机内参将三维空间点投影到像素平面
         int col = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
         int row = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
-
+        
         if ((col >= 0) && (col < image_size.width) && (row >= 0) && (row < image_size.height) && cam_cloud[i].z > 0) {
             colored_3d_point.x = cam_cloud[i].x;
             colored_3d_point.y = cam_cloud[i].y;
@@ -106,20 +107,23 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
             colored_3d_point.b = rgb_pixel[0] * 2;
             out_cloud->points.push_back(colored_3d_point);
         }
-
+        
         for (size_t j = 0; j < objs.size(); j++) {
             if ((col < objs[j].xmax) && (col > objs[j].xmin) && (row > objs[j].ymin) && (row < objs[j].ymax) && (cam_cloud[i].z > 0)) {
-                objs[j].pc->points.push_back(cam_cloud[i]);
+                objs[j].pc.points.push_back(cam_cloud[i]);
             }
         }
     }
-
     double cluster_dis_table[10] = { 5, 8, 10, 2, 2, 2, 2, 3, 10 };
-
+    
     for (size_t k = 0; k < objs.size(); k++) {
-        removeOutlier(objs[k], cluster_dis_table[objs[k].category - 1]);
+        if(objs[k].pc.points.size() > 0){
+            removeOutlier(objs[k], cluster_dis_table[objs[k].category - 1]);
+        }
+        else{
+            objs.erase(objs.begin() + k);
+        }
     }
-
     for (size_t m = 0; m < objs.size(); m++) {
         calObstacleInfo(objs[m]);
     }
@@ -139,15 +143,15 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
 
 void PixelCloudFusion::calObstacleInfo(Object& in_detect_obj)
 {
-    in_detect_obj.xmin_3d_bbox = DBL_MAX;
-    in_detect_obj.xmax_3d_bbox = -DBL_MAX;
-    in_detect_obj.ymin_3d_bbox = DBL_MAX;
-    in_detect_obj.ymax_3d_bbox = -DBL_MAX;
-    in_detect_obj.zmin_3d_bbox = DBL_MAX;
-    in_detect_obj.zmax_3d_bbox = -DBL_MAX;
+    in_detect_obj.xmin_3d_bbox = 9999;
+    in_detect_obj.xmax_3d_bbox = -9999;
+    in_detect_obj.ymin_3d_bbox = 9999;
+    in_detect_obj.ymax_3d_bbox = -9999;
+    in_detect_obj.zmin_3d_bbox = 9999;
+    in_detect_obj.zmax_3d_bbox = -9999;
 
-    for (size_t j = 0; j < in_detect_obj.pc->points.size(); j++) {
-        pcl::PointXYZ p = in_detect_obj.pc->points[j];
+    for (size_t j = 0; j < in_detect_obj.pc.points.size(); j++) {
+        pcl::PointXYZ p = in_detect_obj.pc.points[j];
         objs[j].xmin_3d_bbox = p.x < objs[j].xmin_3d_bbox ? p.x : objs[j].xmin_3d_bbox;
         objs[j].ymin_3d_bbox = p.y < objs[j].ymin_3d_bbox ? p.y : objs[j].ymin_3d_bbox;
         objs[j].zmin_3d_bbox = p.z < objs[j].zmin_3d_bbox ? p.z : objs[j].zmin_3d_bbox;
@@ -155,6 +159,7 @@ void PixelCloudFusion::calObstacleInfo(Object& in_detect_obj)
         objs[j].ymax_3d_bbox = p.y > objs[j].ymax_3d_bbox ? p.y : objs[j].ymax_3d_bbox;
         objs[j].zmax_3d_bbox = p.z > objs[j].zmax_3d_bbox ? p.z : objs[j].zmax_3d_bbox;
     }
+
 }
 
 void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cluster_dis)
@@ -165,8 +170,8 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2d(new pcl::PointCloud<pcl::PointXYZ>);
-
-    pcl::copyPointCloud(*in_detect_obj.pc, *cloud_2d);
+    
+    pcl::copyPointCloud(in_detect_obj.pc, *cloud_2d);
 
     for (size_t i = 0; i < cloud_2d->points.size(); i++) {
         cloud_2d->points[i].z = 0;
@@ -183,23 +188,32 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
     euc.setSearchMethod(tree);
     euc.setInputCloud(cloud_2d);
     euc.extract(cluster_indices);
-
-    double best_cluser_index = 0;
+ 
+    double best_cluster_index = 0;
     double cluster_points_maxnum = 0;
     for (size_t i = 0; i < cluster_indices.size(); i++) {
         if (cluster_indices[i].indices.size() > cluster_points_maxnum) {
             cluster_points_maxnum = cluster_indices[i].indices.size();
-            best_cluser_index = i;
+            best_cluster_index = i;
         }
     }
-    pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud;
-    pcl::ExtractIndices<pcl::PointXYZ> extract;
-    extract.setInputCloud(in_detect_obj.pc);
-    extract.setIndices(boost::shared_ptr<::pcl::PointIndices>(&cluster_indices[best_cluser_index]));
-    extract.setNegative(false); // true removes the indices, false leaves only the indices
-    extract.filter(*out_cloud);
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud;
+    // pcl::ExtractIndices<pcl::PointXYZ> extract;
+    // extract.setInputCloud(in_detect_obj.pc);
+    // extract.setIndices(boost::shared_ptr<::pcl::PointIndices>(&cluster_indices[best_cluster_index]));
+    // extract.setNegative(false); // true removes the indices, false leaves only the indices
+    // extract.filter(*out_cloud);
 
-    in_detect_obj.pc = out_cloud;
+    pcl::PointCloud<pcl::PointXYZ> tmp_pc;
+
+    if(cluster_indices.size() > 0){
+        //printf("%f\n", cluster_indices[best_cluster_index].indices.size());
+        for(size_t i = 0; i < cluster_indices[best_cluster_index].indices.size(); i++){
+            tmp_pc.points.push_back(in_detect_obj.pc.points[cluster_indices[best_cluster_index].indices[i]]);
+        }
+    }
+    pcl::copyPointCloud(tmp_pc, in_detect_obj.pc);
+    // in_detect_obj.pc = tmp_pc;
 }
 
 void PixelCloudFusion::publishObjs()
@@ -216,7 +230,7 @@ void PixelCloudFusion::publishObjs()
     obj_marker.action = visualization_msgs::Marker::ADD;
     obj_marker.color.a = 0.8;
     obj_marker.lifetime = ros::Duration(0.1);
-
+    printf("%s\n", "00");   
     for (size_t k = 0; k < objs.size(); k++) {
         obj_marker.id = k;
         category_deal(obj_marker, objs[k]);
@@ -226,33 +240,35 @@ void PixelCloudFusion::publishObjs()
         obj_marker.scale.x = std::max(float(0.1), objs[k].xmax_3d_bbox - objs[k].xmin_3d_bbox);
         obj_marker.scale.y = std::max(float(0.1), objs[k].ymax_3d_bbox - objs[k].ymin_3d_bbox);
         objs_marker.markers.push_back(obj_marker);
-
-        output_obj.id = k;
-        output_obj.pose.position.x = (objs[k].xmin_3d_bbox + objs[k].xmax_3d_bbox) / 2;
-        output_obj.pose.position.y = (objs[k].ymin_3d_bbox + objs[k].ymax_3d_bbox) / 2;
-        output_obj.pose.position.z = (objs[k].zmin_3d_bbox + objs[k].zmax_3d_bbox) / 2;
-        output_obj.convex_hull.polygon.points.clear();
-        geometry_msgs::Point32 pp;
-        pp.x = objs[k].xmin_3d_bbox;
-        pp.y = objs[k].ymin_3d_bbox;
-        pp.z = objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = objs[k].xmin_3d_bbox;
-        pp.y = objs[k].ymax_3d_bbox;
-        pp.z = objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = objs[k].xmax_3d_bbox;
-        pp.y = objs[k].ymin_3d_bbox;
-        pp.z = objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = objs[k].xmax_3d_bbox;
-        pp.y = objs[k].ymax_3d_bbox;
-        pp.z = objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        output_objs.objects.push_back(output_obj);
+        printf("%s\n", "11");  
+        //output_obj.id = k;
+        //output_obj.pose.position.x = (objs[k].xmin_3d_bbox + objs[k].xmax_3d_bbox) / 2;
+        //output_obj.pose.position.y = (objs[k].ymin_3d_bbox + objs[k].ymax_3d_bbox) / 2;
+        //output_obj.pose.position.z = (objs[k].zmin_3d_bbox + objs[k].zmax_3d_bbox) / 2;
+        //output_obj.convex_hull.polygon.points.clear();
+        //geometry_msgs::Point32 pp;
+        //pp.x = objs[k].xmin_3d_bbox;
+        //pp.y = objs[k].ymin_3d_bbox;
+        //pp.z = objs[k].zmin_3d_bbox;
+        //output_obj.convex_hull.polygon.points.push_back(pp);
+        //pp.x = objs[k].xmin_3d_bbox;
+        //pp.y = objs[k].ymax_3d_bbox;
+        //pp.z = objs[k].zmin_3d_bbox;
+        //output_obj.convex_hull.polygon.points.push_back(pp);
+        //pp.x = objs[k].xmax_3d_bbox;
+        //pp.y = objs[k].ymin_3d_bbox;
+        //pp.z = objs[k].zmin_3d_bbox;
+        //output_obj.convex_hull.polygon.points.push_back(pp);
+        //pp.x = objs[k].xmax_3d_bbox;
+        //pp.y = objs[k].ymax_3d_bbox;
+        //pp.z = objs[k].zmin_3d_bbox;
+        //output_obj.convex_hull.polygon.points.push_back(pp);
+        //output_objs.objects.push_back(output_obj);
+        printf("%s\n", "22");  
     }
-    objs_pub.publish(output_objs);
-    objs_pub_rviz.publish(objs_marker);
+    printf("%s\n", "33");  
+    //objs_pub.publish(output_objs);
+    //objs_pub_rviz.publish(objs_marker);
 }
 
 void PixelCloudFusion::category_deal(visualization_msgs::Marker& objmarker, Object& obj)
