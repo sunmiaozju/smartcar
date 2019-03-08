@@ -119,9 +119,9 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &c
             colored_3d_point.z = cam_cloud[i].z;
 
             cv::Vec3b rgb_pixel = current_frame.at<cv::Vec3b>(row, col);
-            colored_3d_point.r = rgb_pixel[2];
-            colored_3d_point.g = rgb_pixel[1];
-            colored_3d_point.b = rgb_pixel[0];
+            colored_3d_point.r = rgb_pixel[2]*2;
+            colored_3d_point.g = rgb_pixel[1]*2;
+            colored_3d_point.b = rgb_pixel[0]*2;
             out_cloud->points.push_back(colored_3d_point);
             // ROS_INFO("%d, %d, %d", i, col, row);
         }
@@ -161,11 +161,12 @@ void PixelCloudFusion::publishObjs()
     smartcar_msgs::DetectedObjectArray output_objs;
     smartcar_msgs::DetectedObject output_obj;
 
-    obj_marker.header.frame_id = "map";
+    obj_marker.header.frame_id = "velodyne";
     obj_marker.header.stamp = ros::Time();
     obj_marker.type = visualization_msgs::Marker::CUBE;
     obj_marker.action = visualization_msgs::Marker::ADD;
-    obj_marker.color.a = 1.0;
+    obj_marker.color.a = 0.8;
+    obj_marker.lifetime = ros::Duration(0.1);
 
     for (size_t k = 0; k < objs.size(); k++)
     {
@@ -344,8 +345,8 @@ pcl::PointXYZ PixelCloudFusion::TransformPoint(const pcl::PointXYZ &in_point, co
 void PixelCloudFusion::initROS()
 {
     std::string pointscloud_input, image_input, camera_info_input, fusison_output_topic, transformed_cloud_topic;
-    nh_private.param<std::string>("pointcloud_input", pointscloud_input, "/points_raw");
-    nh_private.param<std::string>("image_input", image_input, "/image_raw");
+    nh_private.param<std::string>("pointcloud_input", pointscloud_input, "/velodyne_points");
+    nh_private.param<std::string>("image_input", image_input, "/cv_camera/image_raw");
     nh_private.param<std::string>("camera_info_input", camera_info_input, "/camera_info");
     nh_private.param<std::string>("fusion_output_topic", fusison_output_topic, "/points_output");
     nh_private.param<std::string>("transformed_cloud_topic", transformed_cloud_topic, "/transformed_cloud");
@@ -358,7 +359,7 @@ void PixelCloudFusion::initROS()
     pub_fusion_cloud = nh.advertise<sensor_msgs::PointCloud2>(fusison_output_topic, 1);
     transformed_pointcloud = nh.advertise<sensor_msgs::PointCloud2>(transformed_cloud_topic, 1);
     objs_pub_rviz = nh.advertise<visualization_msgs::MarkerArray>("objs", 1);
-    objs_pub = nh.advertise<visualization_msgs::Marker>("one_obj", 1);
+    objs_pub = nh.advertise<smartcar_msgs::DetectedObjectArray>("one_obj", 1);
 }
 
 PixelCloudFusion::PixelCloudFusion() : nh_private("~"),
