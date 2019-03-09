@@ -6,7 +6,7 @@
   <node pkg="tf" type="static_transform_publisher" name="base2rr" args="-0.178 -0.178 -0.165 0 0 0 1 /base_link /wheel_rr 100" />
 
   <node pkg="static_map" type="static_map_node" name="static_map_node">
-    <param name="pcd_file" value="$(find static_map)/map_file/yuquan_40w_no_ground_white.pcd" />
+    <param name="pcd_file" value="$(find static_map)/map_file/yuquan_46w.pcd" />
     <param name="map_frame" value="map" />
     <param name="duration" value="1.0" />
     <remap from="/static_map" to="/map/point_cloud" />
@@ -16,6 +16,6 @@
   <node pkg="rviz" type="rviz" name="Rviz_for_ndt_localization" args="-d $(find ndt_localization)/rviz/test_ndt_localization.rviz" />
   <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
     <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
-    <param name="global_map_file" value="$(find static_map)/map_file/yuquan_40w_no_ground_white.pcd"/>
+    <param name="global_map_file" value="$(find static_map)/map_file/yuquan_46w.pcd"/>
   </node>
 </launch>

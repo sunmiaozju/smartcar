@@ -7,6 +7,6 @@
         <param name="weight_data" value="0.47" />
         <param name="weight_smooth" value="0.2" />
         <param name="tolerance" value="0.1" />
-        <param name="Visualize_Simulation" value="true" />
+        <param name="Visualize_Simulation" value="false" />
     </node>
 </launch>
