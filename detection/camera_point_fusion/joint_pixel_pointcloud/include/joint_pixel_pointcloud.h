@@ -59,7 +59,7 @@ public:
     float obj_deg;
     float obj_dist;
     float xmin_3d_bbox, ymin_3d_bbox, zmin_3d_bbox, xmax_3d_bbox, ymax_3d_bbox, zmax_3d_bbox;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pc;
+    pcl::PointCloud<pcl::PointXYZ> pc;
 };
 
 class PixelCloudFusion {
