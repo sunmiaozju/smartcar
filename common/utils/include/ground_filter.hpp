@@ -17,6 +17,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/transform_listener.h>
 #include <omp.h>
+#include <math.h>
 
 namespace utils{
 
@@ -72,26 +73,30 @@ private:
   int radial_dividers_num_;
   int concentric_dividers_num_;
 
+  ros::NodeHandle nh;
+  ros::Publisher pub_debug_pc;
+
 public:
   RayGroundFilter(){
     SENSOR_MODEL = 16;
-    SENSOR_HEIGHT = 0.3;
-    local_max_slope_ = 8.0;
-    general_max_slope_ = 5.0;
+    SENSOR_HEIGHT = 0.37;
+    local_max_slope_ = 5.0;
+    general_max_slope_ = 3.0;
     min_height_threshold_ = 0.05;
     reclass_distance_threshold_ = 0.2;
     RADIAL_DIVIDER_ANGLE = 0.18;
     concentric_divider_distance_ = 0.01;
-    MIN_DISTANCE = 2.4;
+    MIN_DISTANCE = 0.0;
 
     CLIP_HEIGHT = 1.0;
-    minX = -5.0;  
-    maxX = 20.0;
-    minY = -10.0;
-    maxY = 10.0;
+    minX = -1;  
+    maxX = 1;
+    minY = -1;
+    maxY = 1;
+    pub_debug_pc = nh.advertise<sensor_msgs::PointCloud2>("RayFilter_debug", 10);
   };
-  ~RayGroundFilter(){};
 
+  ~RayGroundFilter(){};
     void clip_above(double clip_height, const pcl::PointCloud<PointNoI>::Ptr in,
                                 const pcl::PointCloud<PointNoI>::Ptr out,
                                 const pcl::PointIndices::Ptr up_indices)
@@ -114,10 +119,17 @@ public:
         cliper.filter(*out);
     }
 
+
+    /**
+     * @description: Remove point in the round of (minX, maxX, minY, maxY)
+     * @param {type} 
+     * @return: 
+     */
     void remove_close_pt(double min_distance, const pcl::PointCloud<PointNoI>::Ptr in,
                                     const pcl::PointCloud<PointNoI>::Ptr out,
                                     const pcl::PointIndices::Ptr target_indices)
-    {
+    {   
+        min_distance = min_distance * min_distance;
         pcl::ExtractIndices<PointNoI> cliper;
 
         cliper.setInputCloud(in);
@@ -125,18 +137,21 @@ public:
     #pragma omp for
         for (int i = 0; i < in->points.size(); i++)
         {
-            // double distance = sqrt(in->points[i].x * in->points[i].x + in->points[i].y * in->points[i].y);
-
-            // if (distance < min_distance)
-            // {
-            //     indices.indices.push_back(i);
-            // }
             double x = in->points[i].x;
             double y = in->points[i].y;
             double z = in->points[i].z;
-            if(minX > x || x > maxX || minY > y || y > maxY){
-                indices.indices.push_back(i);
+            if(min_distance > 0.5){
+                double dis = x * x + y * y;
+                if(dis > min_distance){
+                    indices.indices.push_back(i);
+                }
             }
+            else{
+                if(minX > x || x > maxX || minY > y || y > maxY){
+                    indices.indices.push_back(i);
+                }
+            }
+
 
             // else if(z < default_cluster_height - SENSOR_HEIGHT){   // 过滤小半径范围内的地面点： 因为这些点在射线上的距离很近;且近距离的地面点可简单通过阈值过滤掉
             //     double distance = sqrt(x * x + y * y);
@@ -146,7 +161,7 @@ public:
             // }
         }
         cliper.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-        cliper.setNegative(true); //ture to remove the indices
+        cliper.setNegative(false); //ture to remove the indices
         cliper.filter(*out);
     }
 
@@ -309,6 +324,11 @@ public:
 
         pcl::PointCloud<PointNoI>::Ptr remove_close(new pcl::PointCloud<PointNoI>);
         remove_close_pt(MIN_DISTANCE, cliped_pc_ptr, remove_close, nullptr);
+
+        sensor_msgs::PointCloud2 t_msg;
+        pcl::toROSMsg(*remove_close, t_msg);
+        t_msg.header.frame_id = "velodyne";
+        pub_debug_pc.publish(t_msg);
         
         PointCloudXYZIRTColor organized_points;
         std::vector<pcl::PointIndices> radial_division_indices;
@@ -337,6 +357,17 @@ public:
 
     void setIfClipHeight(bool yn){
         is_clip_height = yn;
+    }
+
+    void setCloseROI(double min_x, double min_y,double max_x,double max_y){
+        minX = min_x;
+        minY = min_y;
+        maxX = max_x;
+        maxY = max_y;
+    }
+
+    void setMinDistance(double min_distance){
+        MIN_DISTANCE = min_distance;
     }
 };//end 
 
