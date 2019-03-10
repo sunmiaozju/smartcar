@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 21:41:21
- * @LastEditTime: 2019-03-08 21:52:36
+ * @LastEditTime: 2019-03-09 21:42:43
  */
 #ifndef NODE_JOINT_PIXEL_POINTCLOUD_H
 #define NODE_JOINT_PIXEL_POINTCLOUD_H
@@ -52,13 +52,14 @@ namespace NODE_JOINT_PIXEL_POINTCLOUD {
 
 class Object {
 public:
-    float score;
+    double score;
     int category;
     int xmin, ymin, xmax, ymax;
     int xmin_3d_pic, ymin_3d_pic, xmax_3d_pic, ymax_3d_pic;
-    float obj_deg;
-    float obj_dist;
-    float xmin_3d_bbox, ymin_3d_bbox, zmin_3d_bbox, xmax_3d_bbox, ymax_3d_bbox, zmax_3d_bbox;
+    double center_x, center_y, center_z;
+    double obj_deg;
+    double obj_dist;
+    double xmin_3d_bbox, ymin_3d_bbox, zmin_3d_bbox, xmax_3d_bbox, ymax_3d_bbox, zmax_3d_bbox;
     pcl::PointCloud<pcl::PointXYZ> pc;
 };
 
@@ -75,6 +76,7 @@ class PixelCloudFusion {
     ros::Publisher objs_pub;
 
     std::vector<Object> objs;
+    std::vector<Object> removed_lessPoints_objs;
 
     cv::Size image_size;
     cv::Mat camera_instrinsics; //相机内参
@@ -86,6 +88,8 @@ class PixelCloudFusion {
 
     bool camera_lidar_tf_ok_;
     bool camera_info_ok_;
+
+    bool usingObjs;
 
     std::string image_frame_id;
 
