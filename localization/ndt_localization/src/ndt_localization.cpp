@@ -218,6 +218,7 @@ bool NDTLocalization::load_map(std::string map_file){
   pcl::io::loadPCDFile(map_file,*msg_globalmap);
   pcl::fromROSMsg(*msg_globalmap,model_pc_);
   model_pc_num_ = msg_globalmap->width;
+  std::cout << "Success load map: " << map_file << std::endl;
 
   if(use_local_target){
     update_target_map();   // >>>>>>>>>>更新target地图
