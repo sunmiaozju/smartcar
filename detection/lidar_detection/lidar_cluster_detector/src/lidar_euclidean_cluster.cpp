@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-01 11:25:55
- * @LastEditTime: 2019-03-08 21:42:38
+ * @LastEditTime: 2019-03-12 10:00:33
  */
 
 #include "lidar_euclidean_cluster.h"
@@ -47,9 +47,9 @@ void LidarClusterDetector::initROS()
     private_nh.param<double>("radial_divide_angle", radial_divide_angle, 0.5);
     private_nh.param<double>("concentric_divide_distance", concentric_divide_distance, 0.1);
     private_nh.param<double>("min_local_height_threshold", min_local_height_threshold, 0.05);
-    private_nh.param<double>("sensor_height", sensor_height, 0.36);
-    private_nh.param<double>("local_threshold_slope", local_threshold_slope, 3.0);
-    private_nh.param<double>("general_threshold_slope", general_threshold_slope, 2.0);
+    private_nh.param<double>("sensor_height", sensor_height, 0.37);
+    private_nh.param<double>("local_threshold_slope", local_threshold_slope, 5.0);
+    private_nh.param<double>("general_threshold_slope", general_threshold_slope, 3.0);
     private_nh.param<double>("left_right_dis_threshold", left_right_dis_threshold, 6.5);
 
     private_nh.param<std::string>("str_range", str_range, "15,30,45,60");

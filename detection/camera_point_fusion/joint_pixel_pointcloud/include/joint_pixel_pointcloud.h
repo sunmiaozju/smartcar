@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 21:41:21
- * @LastEditTime: 2019-03-09 21:42:43
+ * @LastEditTime: 2019-03-11 14:24:54
  */
 #ifndef NODE_JOINT_PIXEL_POINTCLOUD_H
 #define NODE_JOINT_PIXEL_POINTCLOUD_H
@@ -50,6 +50,21 @@
 
 namespace NODE_JOINT_PIXEL_POINTCLOUD {
 
+class PointXYZRT {
+public:
+    pcl::PointXYZ point;
+
+    float radius;
+    float theta;
+
+    size_t radial_div;
+    size_t concentric_div;
+
+    size_t original_index;
+};
+
+typedef std::vector<PointXYZRT> PointCloudXYZRT;
+
 class Object {
 public:
     double score;
@@ -71,7 +86,7 @@ class PixelCloudFusion {
     ros::Subscriber sub_image;
     ros::Subscriber sub_cloud;
     ros::Subscriber sub_detection;
-    ros::Publisher transformed_pointcloud;
+    ros::Publisher test_pointcloud;
     ros::Publisher objs_pub_rviz;
     ros::Publisher objs_pub;
 
@@ -88,8 +103,20 @@ class PixelCloudFusion {
 
     bool camera_lidar_tf_ok_;
     bool camera_info_ok_;
-
     bool usingObjs;
+
+    double radial_divide_angle;
+    double concentric_divide_distance;
+    double min_local_height_threshold;
+
+    double clip_left_right_dis;
+    double clip_far;
+    double clip_dis;
+    double clip_height;
+
+    double local_slope_threshold;
+    double general_slope_threshhold;
+    double sensor_height;
 
     std::string image_frame_id;
 
@@ -118,6 +145,18 @@ class PixelCloudFusion {
     void removeOutlier(Object& in_detect_obj, const double& max_cluster_dis);
 
     void calObstacleInfo(Object& in_detect_obj);
+
+    void clipCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud,
+        const double& height, const double& near_dis, const double& fat_dis, const double& left_right_dis);
+
+    void removeFloorRayFiltered(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_only_ground_cloud,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& out_no_ground_cloud,
+        const double& sensor_height, const double& local_max_slope, const double& general_max_slope);
+
+    void convertXYZ2XYZRT(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+        std::vector<PointCloudXYZRT>& out_radial_divided_cloud);
 
 public:
     PixelCloudFusion();
