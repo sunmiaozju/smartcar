@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-12 15:03:51
+ * @LastEditTime: 2019-03-12 15:43:35
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -52,7 +52,7 @@ void RolloutGenerator::initROS()
     pub_testLane = nh.advertise<visualization_msgs::Marker>("test_lane", 1);
 
     sub_currentPose = nh.subscribe("/ndt/current_pose", 10, &RolloutGenerator::getCurrentPose_cb, this);
-    sub_globalPlannerPath = nh.subscribe("/global_path", 1, &RolloutGenerator::getGlobalPlannerPath_cb, this);
+    sub_globalPlannerPath = nh.subscribe("/global_path", 1, &RolloutGenerator::getNavGlobalPlannerPath_cb, this);
     speed = 1;
 }
 
@@ -602,6 +602,24 @@ void RolloutGenerator::getGlobalPlannerPath_cb(const smartcar_msgs::LaneArrayCon
             calcAngleAndCost(single_path);
             globalPaths.push_back(single_path);
         }
+    }
+}
+
+void RolloutGenerator::getNavGlobalPlannerPath_cb(const nav_msgs::PathConstPtr& msg)
+{
+    if (msg->poses.size() > 0) {
+        globalPaths.clear();
+        std::vector<UtilityNS::WayPoint> single_path;
+        single_path.clear();
+        for (size_t i = 0; i < msg->poses.size(); i++) {
+            UtilityNS::WayPoint pp;
+            pp.pos.x = msg->poses[i].pose.position.x;
+            pp.pos.y = msg->poses[i].pose.position.y;
+            pp.pos.z = msg->poses[i].pose.position.z;
+            pp.pos.yaw = tf::getYaw(msg->poses[i].pose.orientation);
+            single_path.push_back(pp);
+        }
+        globalPaths.push_back(single_path);
     }
 }
 

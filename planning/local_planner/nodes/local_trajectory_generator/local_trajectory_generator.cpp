@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-12 14:45:51
+ * @LastEditTime: 2019-03-12 15:43:59
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -50,7 +50,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
 
 void LocalTrajectoryGenerator::initROS()
 {
-    sub_currentPose = nh.subscribe("current_pose", 1, &LocalTrajectoryGenerator::getCurrentPose_cb, this);
+    sub_currentPose = nh.subscribe("/ndt/current_pose", 1, &LocalTrajectoryGenerator::getCurrentPose_cb, this);
     sub_detectedObjects = nh.subscribe("fusion_objs", 1, &LocalTrajectoryGenerator::getDetectedObjects_cb, this);
     sub_localRollouts = nh.subscribe("local_rollouts", 1, &LocalTrajectoryGenerator::getRolloutPaths_cb, this);
     sub_centralPath = nh.subscribe("centralPathSection", 1, &LocalTrajectoryGenerator::getCentralPathSection_cb, this);
