@@ -49,7 +49,7 @@ class LocalTrajectoryGenerator
 
   void getCurrentPose_cb(const geometry_msgs::PoseStampedConstPtr &msg);
   void getRolloutPaths_cb(const smartcar_msgs::LaneArrayConstPtr &msg);
-  void getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArrayConstPtr &msg);
+  void getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArray &msg);
   void getCentralPathSection_cb(const smartcar_msgs::LaneConstPtr &msg);
   void initROS();
   UtilityNS::TrajectoryCost trajectory_evaluator_static(const std::vector<std::vector<UtilityNS::WayPoint>> &rollouts,

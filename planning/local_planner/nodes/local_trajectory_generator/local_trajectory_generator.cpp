@@ -80,29 +80,29 @@ LocalTrajectoryGenerator::~LocalTrajectoryGenerator()
 /**
  * @description: 获取障碍物数组
  */
-void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArrayConstPtr& msg)
+void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArray& msg)
 {
     detect_objs.clear();
-    for (int i = 0; i < msg->objects.size(); i++) {
+    for (int i = 0; i < msg.objects.size(); i++) {
         UtilityNS::DetectedObject obj;
-        obj.id = msg->objects[i].id;
-        obj.label = msg->objects[i].label;
+        obj.id = msg.objects[i].id;
+        obj.label = msg.objects[i].label;
 
-        obj.l = msg->objects[i].dimensions.x;
-        obj.w = msg->objects[i].dimensions.y;
-        obj.h = msg->objects[i].dimensions.z;
+        obj.l = msg.objects[i].dimensions.x;
+        obj.w = msg.objects[i].dimensions.y;
+        obj.h = msg.objects[i].dimensions.z;
 
-        obj.center.pos.x = msg->objects[i].pose.position.x;
-        obj.center.pos.y = msg->objects[i].pose.position.y;
-        obj.center.pos.z = msg->objects[i].pose.position.z;
-        obj.center.pos.yaw = tf::getYaw(msg->objects[i].pose.orientation);
+        obj.center.pos.x = msg.objects[i].pose.position.x;
+        obj.center.pos.y = msg.objects[i].pose.position.y;
+        obj.center.pos.z = msg.objects[i].pose.position.z;
+        obj.center.pos.yaw = tf::getYaw(msg.objects[i].pose.orientation);
 
         UtilityNS::GPSPoint p;
         obj.contour.clear();
-        for (int k = 0; k < msg->objects[i].convex_hull.polygon.points.size(); k++) {
-            p.x = msg->objects[i].convex_hull.polygon.points[k].x;
-            p.y = msg->objects[i].convex_hull.polygon.points[k].y;
-            p.z = msg->objects[i].convex_hull.polygon.points[k].z;
+        for (int k = 0; k < msg.objects[i].convex_hull.polygon.points.size(); k++) {
+            p.x = msg.objects[i].convex_hull.polygon.points[k].x;
+            p.y = msg.objects[i].convex_hull.polygon.points[k].y;
+            p.z = msg.objects[i].convex_hull.polygon.points[k].z;
             obj.contour.push_back(p);
         }
         detect_objs.push_back(obj);
