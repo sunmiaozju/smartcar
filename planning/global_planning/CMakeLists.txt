@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   rospy
+  dynamic_reconfigure
   geometry_msgs
   sensor_msgs
   std_msgs
@@ -20,6 +21,12 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   tf
 )
+
+# gennerate_dunamic...必须在catkin_package之前
+generate_dynamic_reconfigure_options(
+  cfg/global_planning_configure.cfg
+)
+
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES test_nav_path
@@ -34,9 +41,13 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-
 add_executable(global_plan_node src/global_plan_node.cpp)
 target_link_libraries(global_plan_node ${catkin_LIBRARIES})
+add_dependencies(global_plan_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  ${PROJECT_NAME}_gencfg
+)
 
 
 
