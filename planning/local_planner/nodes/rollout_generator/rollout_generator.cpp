@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-07 21:59:04
+ * @LastEditTime: 2019-03-12 15:03:51
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -51,8 +51,8 @@ void RolloutGenerator::initROS()
     pub_centralPathSection = nh.advertise<smartcar_msgs::Lane>("centralPathSection", 1);
     pub_testLane = nh.advertise<visualization_msgs::Marker>("test_lane", 1);
 
-    sub_currentPose = nh.subscribe("/current_pose", 10, &RolloutGenerator::getCurrentPose_cb, this);
-    sub_globalPlannerPath = nh.subscribe("/lane_array", 1, &RolloutGenerator::getGlobalPlannerPath_cb, this);
+    sub_currentPose = nh.subscribe("/ndt/current_pose", 10, &RolloutGenerator::getCurrentPose_cb, this);
+    sub_globalPlannerPath = nh.subscribe("/global_path", 1, &RolloutGenerator::getGlobalPlannerPath_cb, this);
     speed = 1;
 }
 

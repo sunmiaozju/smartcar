@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 21:34:40
- * @LastEditTime: 2019-03-12 09:40:44
+ * @LastEditTime: 2019-03-12 13:20:14
  */
 #include "joint_pixel_pointcloud.h"
 
@@ -142,7 +142,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
     publishObjs();
 
     sensor_msgs::PointCloud2 test_point;
-    pcl::toROSMsg(*in_cloud, test_point);
+    pcl::toROSMsg(*in_cloud_msg, test_point);
     test_point.header = cloud_msg->header;
     test_pointcloud.publish(test_point);
 
@@ -151,7 +151,6 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
     out_cloud_msg.header = cloud_msg->header;
     pub_fusion_cloud.publish(out_cloud_msg);
 
-    // printf("%s\n", "----------------");
     usingObjs = false;
 }
 
@@ -332,6 +331,7 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
 
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> euc;
 
+    // TODO 设置不同类别不同的聚类距离
     euc.setClusterTolerance(3);
     euc.setMinClusterSize(cluster_min_points);
     euc.setMaxClusterSize(cluster_max_points);
@@ -391,6 +391,8 @@ void PixelCloudFusion::publishObjs()
     obj_marker.lifetime = ros::Duration(0.1);
     objs_marker.markers.clear();
     for (size_t k = 0; k < removed_lessPoints_objs.size(); k++) {
+
+        // Rviz marker
         obj_marker.id = k;
         category_deal(obj_marker, removed_lessPoints_objs[k]);
         obj_marker.pose.position.x = (removed_lessPoints_objs[k].xmin_3d_bbox + removed_lessPoints_objs[k].xmax_3d_bbox) / 2;
@@ -400,29 +402,41 @@ void PixelCloudFusion::publishObjs()
         obj_marker.scale.y = std::max(double(0.1), removed_lessPoints_objs[k].ymax_3d_bbox - removed_lessPoints_objs[k].ymin_3d_bbox);
         obj_marker.scale.z = std::max(double(0.1), removed_lessPoints_objs[k].zmax_3d_bbox - removed_lessPoints_objs[k].zmin_3d_bbox);
         objs_marker.markers.push_back(obj_marker);
+
+        // objs msg
+        // 障碍物中心点和id
         output_obj.id = k;
         output_obj.pose.position.x = (removed_lessPoints_objs[k].xmin_3d_bbox + removed_lessPoints_objs[k].xmax_3d_bbox) / 2;
         output_obj.pose.position.y = (removed_lessPoints_objs[k].ymin_3d_bbox + removed_lessPoints_objs[k].ymax_3d_bbox) / 2;
         output_obj.pose.position.z = (removed_lessPoints_objs[k].zmin_3d_bbox + removed_lessPoints_objs[k].zmax_3d_bbox) / 2;
+
+        // 障碍物尺度
+        output_obj.dimensions.x = obj_marker.scale.x;
+        output_obj.dimensions.y = obj_marker.scale.y;
+        output_obj.dimensions.z = obj_marker.scale.z;
+
+        // 障碍物轮廓点
         output_obj.convex_hull.polygon.points.clear();
-        geometry_msgs::Point32 pp;
-        pp.x = removed_lessPoints_objs[k].xmin_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymin_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = removed_lessPoints_objs[k].xmin_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymax_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = removed_lessPoints_objs[k].xmax_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymin_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = removed_lessPoints_objs[k].xmax_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymax_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        output_objs.objects.push_back(output_obj);
+        std::vector<cv::Point2f> points_2d;
+        points_2d.clear();
+        for (size_t i = 0; i < removed_lessPoints_objs[k].pc.points.size(); i++) {
+            cv::Point2f pp;
+            pp.x = removed_lessPoints_objs[k].pc.points[i].x;
+            pp.y = removed_lessPoints_objs[k].pc.points[i].y;
+            points_2d.push_back(pp);
+        }
+
+        std::vector<cv::Point2f> hull;
+        if (points_2d.size() > 0)
+            cv::convexHull(points_2d, hull);
+        output_obj.convex_hull.polygon.points.clear();
+        for (size_t i = 0; i < hull.size(); i++) {
+            geometry_msgs::Point32 pp;
+            pp.x = hull[i].x;
+            pp.y = hull[i].y;
+            pp.z = 0;
+            output_obj.convex_hull.polygon.points.push_back(pp);
+        }
     }
     objs_pub.publish(output_objs);
     objs_pub_rviz.publish(objs_marker);
@@ -532,8 +546,8 @@ void PixelCloudFusion::initROS()
 
     pub_fusion_cloud = nh.advertise<sensor_msgs::PointCloud2>(fusison_output_topic, 1);
     test_pointcloud = nh.advertise<sensor_msgs::PointCloud2>(test_cloud_topic, 1);
-    objs_pub_rviz = nh.advertise<visualization_msgs::MarkerArray>("objs", 1);
-    objs_pub = nh.advertise<smartcar_msgs::DetectedObjectArray>("one_obj", 1);
+    objs_pub_rviz = nh.advertise<visualization_msgs::MarkerArray>("fusion_objs_rviz", 1);
+    objs_pub = nh.advertise<smartcar_msgs::DetectedObjectArray>("fusion_objs", 1);
 }
 
 PixelCloudFusion::PixelCloudFusion()
