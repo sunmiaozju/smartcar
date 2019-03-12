@@ -10,7 +10,7 @@
  * @Author: your name
  * @LastEditors: Please set LastEditors
  * @Date: 2019-03-12 11:04:47
- * @LastEditTime: 2019-03-12 17:43:25
+ * @LastEditTime: 2019-03-12 21:05:42
  */
 /*
  * @Description: In User Settings Edit
@@ -67,7 +67,7 @@ bool cmp_l(const path_msgs::Lane a, const path_msgs::Lane b)
 class global_plan {
 private:
     ros::Subscriber sub_startPose, sub_endPose;
-    ros::Publisher pub_path, pub_vis_path, pub_debug_path;
+    ros::Publisher pub_path, pub_vis_path, pub_debug_path, pub_arrow_array;
     ros::Publisher pub_marker_start, pub_marker_end;
     bool is_startPose_set, is_endPose_set;
 
@@ -91,6 +91,7 @@ private:
     std::vector<path_msgs::Cross> Cross_vec, temp_Cross_vec;
     visualization_msgs::Marker marker_start, marker_end;
     visualization_msgs::Marker marker_car;
+    visualization_msgs::MarkerArray marker_arrow_array, marker_arrow;
 
     std::vector<int> result;
     tf::TransformBroadcaster tf_broadcaster_;
@@ -162,6 +163,7 @@ void global_plan::init()
     pub_marker_start = nh.advertise<visualization_msgs::Marker>("/marker/start_pose", 1);
     pub_marker_end = nh.advertise<visualization_msgs::Marker>("/marker/end_pose", 1);
     pub_car_model = nh.advertise<visualization_msgs::Marker>("/marker/Car_model", 10);
+    pub_arrow_array = nh.advertise<visualization_msgs::MarkerArray>("/arrows", 10);
 
     dynamic_reconfigure::Server<global_planning::GlobalPlanningConfig> cfg_server;
     dynamic_reconfigure::Server<global_planning::GlobalPlanningConfig>::CallbackType cfg_callback = boost::bind(&global_plan::cfgCB, this, _1, _2);
@@ -912,7 +914,7 @@ smartcar_msgs::Lane global_plan::smooth_path(smartcar_msgs::Lane path)
         double diff_y = start_pose.pose.position.y - lane_front[0].pose.pose.position.y;
         double sum_front = 0;
         int front_index;
-        for (int i = 0; i < lane_front.size() - 1; i++) {
+        for (int i = 0; i < lane_front.size() - 2; i++) {
             sum_front += distance2points(lane_front[i].pose, lane_front[i + 1].pose);
             if (sum_front >= start_length) {
                 front_index = i;
@@ -920,7 +922,7 @@ smartcar_msgs::Lane global_plan::smooth_path(smartcar_msgs::Lane path)
             }
         }
 
-        for (int i = 0; i < front_index; i++) {
+        for (int i = 0; i < front_index - 1; i++) {
             smartcar_msgs::Waypoint temp;
             temp.is_lane = 1;
             temp.speed_limit = 0.5;
@@ -932,10 +934,11 @@ smartcar_msgs::Lane global_plan::smooth_path(smartcar_msgs::Lane path)
         smartcar_msgs::Waypoint s = in_front[front_index - 1];
         double lenx = (*path_in.waypoints.begin()).pose.pose.position.x - s.pose.pose.position.x;
         double leny = (*path_in.waypoints.begin()).pose.pose.position.y - s.pose.pose.position.y;
-        int cnt = int(std::abs(sum_length_front - start_length)) * 2;
+        int cnt = int(distance2points(s.pose, (*path_in.waypoints.begin()).pose) * 2);
+        std::cout << "front cnt = " << cnt << std::endl;
         double dx = lenx / cnt;
         double dy = leny / cnt;
-        for (int i = 1; i <= cnt; i++) {
+        for (int i = 1; i < cnt; i++) {
             smartcar_msgs::Waypoint temp;
             temp.is_lane = 1;
             temp.speed_limit = 1.0; // 缓慢起步
@@ -981,10 +984,10 @@ smartcar_msgs::Lane global_plan::smooth_path(smartcar_msgs::Lane path)
         smartcar_msgs::Waypoint e = in_end[in_end.size() - 1];
         double lenx = e.pose.pose.position.x - (*(path_in.waypoints.end() - 1)).pose.pose.position.x;
         double leny = e.pose.pose.position.y - (*(path_in.waypoints.end() - 1)).pose.pose.position.y;
-        int cnt = int(std::abs(sum_length_end - end_length)) * 2;
+        int cnt = int(distance2points(e.pose, (*(path_in.waypoints.end() - 1)).pose) * 2);
         double dx = lenx / cnt;
         double dy = leny / cnt;
-        for (int i = cnt; i >= 0; i--) {
+        for (int i = cnt; i > 0; i--) {
             smartcar_msgs::Waypoint temp;
             temp.is_lane = 1;
             temp.speed_limit = 1.0;
@@ -1045,18 +1048,31 @@ smartcar_msgs::Lane global_plan::smooth_path(smartcar_msgs::Lane path)
         smoothPath_out.waypoints[i].pose.pose.orientation.w = q.w();
     }
 
-    vis_path.poses.clear();
-    for (auto p : smoothPath_out.waypoints) {
-        geometry_msgs::PoseStamped vis_p;
-        vis_p.pose = p.pose.pose;
-        vis_path.poses.push_back(vis_p);
+    // vis_path.poses.clear();
+    // for (auto p : smoothPath_out.waypoints) {
+    //     geometry_msgs::PoseStamped vis_p;
+    //     vis_p.pose = p.pose.pose;
+    //     vis_path.poses.push_back(vis_p);
+    // }
+    // pub_vis_path.publish(vis_path);
+    for (int i = 0; i < smoothPath_out.waypoints.size(); i++) {
+        visualization_msgs::Marker arrow;
+        arrow.header.frame_id = "map";
+        arrow.header.stamp = ros::Time::now();
+        arrow.id = i + 1;
+        arrow.type = visualization_msgs::Marker::ARROW;
+        arrow.action = visualization_msgs::Marker::ADD;
+        arrow.scale.x = 0.4;
+        arrow.scale.y = 0.1;
+        arrow.scale.z = 0.2;
+        arrow.color.r = 0;
+        arrow.color.g = 0;
+        arrow.color.b = 1;
+        arrow.color.a = 1;
+        arrow.pose = smoothPath_out.waypoints[i].pose.pose;
+        marker_arrow_array.markers.push_back(arrow);
     }
-    pub_vis_path.publish(vis_path);
-    std::cout << "-----------------" << std::endl;
-    std::cout << "weight_data: " << weight_data << std::endl;
-    std::cout << "weight_smooth: " << weight_smooth << std::endl;
-    std::cout << "tolerance: " << tolerance << std::endl;
-    std::cout << "-----------------" << std::endl;
+    pub_arrow_array.publish(marker_arrow_array);
     return smoothPath_out;
 }
 
@@ -1114,6 +1130,8 @@ void global_plan::cfgCB(const global_planning::GlobalPlanningConfig& config, uin
     weight_data = config.weight_data;
     weight_smooth = config.weight_smooth;
     tolerance = config.tolerance;
+    start_length = config.start_length;
+    end_length = config.end_length;
     smooth_path(result_path);
 }
 }

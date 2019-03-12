@@ -7,10 +7,13 @@
         <param name="weight_data" value="0.47" />
         <param name="weight_smooth" value="0.2" />
         <param name="tolerance" value="0.1" />
-        <param name="Visualize_Simulation" value="false" />
 
         <param name="lane_speed_limit" value="3.0"/>
         <param name="cross_speed_limit" value="1.0"/>
+        <param name="start_length" value="5.0"/>
+        <param name="end_length" value="5.0"/>
+
+        <param name="Visualize_Simulation" value="false" />
     </node>
     <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="global_planning_reconfigure"/>
 </launch>
