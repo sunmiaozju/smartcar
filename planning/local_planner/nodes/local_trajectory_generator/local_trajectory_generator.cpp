@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-07 20:23:44
+ * @LastEditTime: 2019-03-12 15:43:59
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -15,47 +15,47 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
     currentPose_flag = false;
     pre_best_index = -1;
 
-    // for test
-    UtilityNS::DetectedObject obj;
-    obj.l = 1;
-    obj.w = 1;
-    obj.h = 1;
+    // // for test
+    // UtilityNS::DetectedObject obj;
+    // obj.l = 1;
+    // obj.w = 1;
+    // obj.h = 1;
 
-    obj.center.pos.x = 18.5;
-    obj.center.pos.y = 27;
-    obj.center.pos.z = 0;
-    obj.center.v = 0;
+    // obj.center.pos.x = 18.5;
+    // obj.center.pos.y = 27;
+    // obj.center.pos.z = 0;
+    // obj.center.v = 0;
 
-    UtilityNS::GPSPoint p;
-    obj.contour.clear();
+    // UtilityNS::GPSPoint p;
+    // obj.contour.clear();
 
-    p.x = obj.center.pos.x - 0.5;
-    p.y = obj.center.pos.y + 0.5;
-    p.z = 0;
-    obj.contour.push_back(p);
-    p.x = obj.center.pos.x + 0.5;
-    p.y = obj.center.pos.y + 0.5;
-    p.z = 0;
-    obj.contour.push_back(p);
-    p.x = obj.center.pos.x - 0.5;
-    p.y = obj.center.pos.y - 0.5;
-    p.z = 0;
-    obj.contour.push_back(p);
-    p.x = obj.center.pos.x + 0.5;
-    p.y = obj.center.pos.y - 0.5;
-    p.z = 0;
-    obj.contour.push_back(p);
-    detect_objs.push_back(obj);
+    // p.x = obj.center.pos.x - 0.5;
+    // p.y = obj.center.pos.y + 0.5;
+    // p.z = 0;
+    // obj.contour.push_back(p);
+    // p.x = obj.center.pos.x + 0.5;
+    // p.y = obj.center.pos.y + 0.5;
+    // p.z = 0;
+    // obj.contour.push_back(p);
+    // p.x = obj.center.pos.x - 0.5;
+    // p.y = obj.center.pos.y - 0.5;
+    // p.z = 0;
+    // obj.contour.push_back(p);
+    // p.x = obj.center.pos.x + 0.5;
+    // p.y = obj.center.pos.y - 0.5;
+    // p.z = 0;
+    // obj.contour.push_back(p);
+    // detect_objs.push_back(obj);
 }
 
 void LocalTrajectoryGenerator::initROS()
 {
-    sub_currentPose = nh.subscribe("current_pose", 1, &LocalTrajectoryGenerator::getCurrentPose_cb, this);
-    sub_detectedObjects = nh.subscribe("detected_objects", 1, &LocalTrajectoryGenerator::getDetectedObjects_cb, this);
+    sub_currentPose = nh.subscribe("/ndt/current_pose", 1, &LocalTrajectoryGenerator::getCurrentPose_cb, this);
+    sub_detectedObjects = nh.subscribe("fusion_objs", 1, &LocalTrajectoryGenerator::getDetectedObjects_cb, this);
     sub_localRollouts = nh.subscribe("local_rollouts", 1, &LocalTrajectoryGenerator::getRolloutPaths_cb, this);
     sub_centralPath = nh.subscribe("centralPathSection", 1, &LocalTrajectoryGenerator::getCentralPathSection_cb, this);
 
-    pub_collisionObjsRviz = nh.advertise<visualization_msgs::MarkerArray>("collision_objs_rviz", 1);
+    pub_collisionObjsRviz = nh.advertise<visualization_msgs::MarkerArray>("planner_objs_rviz", 1);
     pub_LocalWeightedTrajectoryRviz = nh.advertise<visualization_msgs::MarkerArray>("local_trajectories_rviz", 1);
     pub_LocalWeightedTrajectory = nh.advertise<smartcar_msgs::LaneArray>("local_trajectories", 1);
     pub_TrajectoryCost = nh.advertise<smartcar_msgs::Lane>("local_trajectory_cost", 1);
@@ -76,10 +76,9 @@ void LocalTrajectoryGenerator::initROS()
 LocalTrajectoryGenerator::~LocalTrajectoryGenerator()
 {
 }
+
 /**
  * @description: 获取障碍物数组
- * @param {type} 
- * @return: 
  */
 void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArrayConstPtr& msg)
 {
@@ -88,6 +87,7 @@ void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::Detect
         UtilityNS::DetectedObject obj;
         obj.id = msg->objects[i].id;
         obj.label = msg->objects[i].label;
+
         obj.l = msg->objects[i].dimensions.x;
         obj.w = msg->objects[i].dimensions.y;
         obj.h = msg->objects[i].dimensions.z;
@@ -96,7 +96,6 @@ void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::Detect
         obj.center.pos.y = msg->objects[i].pose.position.y;
         obj.center.pos.z = msg->objects[i].pose.position.z;
         obj.center.pos.yaw = tf::getYaw(msg->objects[i].pose.orientation);
-        obj.center.v = msg->objects[i].velocity.linear.x;
 
         UtilityNS::GPSPoint p;
         obj.contour.clear();
@@ -256,9 +255,9 @@ void LocalTrajectoryGenerator::visualInRviz()
             obj_marker.pose.position.y = detect_objs[i].center.pos.y;
             obj_marker.pose.position.z = detect_objs[i].center.pos.z;
 
-            obj_marker.scale.x = 1;
-            obj_marker.scale.y = 1;
-            obj_marker.scale.z = 1;
+            obj_marker.scale.x = detect_objs[i].l;
+            obj_marker.scale.y = detect_objs[i].w;
+            obj_marker.scale.z = detect_objs[i].h;
 
             obj_marker.color.a = 1.0;
             obj_marker.color.b = 0.3;

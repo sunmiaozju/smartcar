@@ -12,8 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
         tf
         yunle_sensor_msgs
         )
-
+ 
 find_package(OpenCV REQUIRED)
+find_package(OpenMP)
 find_package(PCL REQUIRED)
 
 catkin_package(CATKIN_DEPENDS
@@ -27,23 +28,6 @@ catkin_package(CATKIN_DEPENDS
         )
 
 set(CMAKE_CXX_FLAGS "-O3 -g -Wall ${CMAKE_CXX_FLAGS}")
-
-#fusion Library
-# add_library(joint_pixel_pointcloud_lib SHARED
-#         src/joint_pixel_pointcloud.cpp
-#         include/joint_pixel_pointcloud.h
-#         )
-
-# target_include_directories(joint_pixel_pointcloud_lib PRIVATE
-#         ${OpenCV_INCLUDE_DIR}
-#         ${catkin_INCLUDE_DIRS}
-#         ${PCL_INCLUDE_DIRS}
-#         include
-#         )
-
-
-
-
 
 #Fusion node
 add_executable(joint_pixel_pointcloud
@@ -67,8 +51,12 @@ target_link_libraries(joint_pixel_pointcloud
 add_dependencies(joint_pixel_pointcloud
         ${catkin_EXPORTED_TARGETS}
         )
-        
-# target_link_libraries(joint_pixel_pointcloud joint_pixel_pointcloud_lib)
+
+if(OPENMP_FOUND)
+    set_target_properties(joint_pixel_pointcloud PROPERTIES
+                        COMPILE_FLAGS ${OpenMP_CXX_FLAGS}
+                        LINK_FLAGS ${OpenMP_CXX_FLAGS})      
+endif()
 
 
 

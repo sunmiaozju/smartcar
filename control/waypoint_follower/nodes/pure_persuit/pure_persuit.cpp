@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 10:47:42
- * @LastEditTime: 2019-03-08 14:15:46
+ * @LastEditTime: 2019-03-12 11:27:59
  */
 // ROS Includes
 #include <ros/ros.h>
@@ -500,7 +500,7 @@ void PurePursuitNode::visualInRviz()
     msg_car_marker.scale.y = 0.6;
     msg_car_marker.scale.z = 0.6;
     msg_car_marker.mesh_use_embedded_materials = true;
-    msg_car_marker.mesh_resource = "package://car_model/car.dae";
+    msg_car_marker.mesh_resource = "package://car_model/ferrari/dae.DAE";
     pub_car_model.publish(msg_car_marker);
 }
 } // namespace waypoint_follower

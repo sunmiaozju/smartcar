@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 21:34:40
- * @LastEditTime: 2019-03-10 10:00:19
+ * @LastEditTime: 2019-03-12 13:20:14
  */
 #include "joint_pixel_pointcloud.h"
 
@@ -76,11 +76,18 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
         return;
     }
 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud_msg(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(*cloud_msg, *in_cloud_msg);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud_clipped(new pcl::PointCloud<pcl::PointXYZ>);
+    clipCloud(in_cloud_msg, in_cloud_clipped, clip_height, clip_dis, clip_far, clip_left_right_dis);
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromROSMsg(*cloud_msg, *in_cloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr only_floor(new pcl::PointCloud<pcl::PointXYZ>);
+    removeFloorRayFiltered(in_cloud_clipped, only_floor, in_cloud, sensor_height, local_slope_threshold, general_slope_threshhold);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     out_cloud->points.clear();
     pcl::PointXYZRGB colored_3d_point;
     for (size_t k = 0; k < objs.size(); k++) {
@@ -91,7 +98,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
     std::vector<pcl::PointXYZ> cam_cloud(in_cloud->points.size());
     for (size_t i = 0; i < in_cloud->points.size(); i++) {
         cam_cloud[i] = TransformPoint(in_cloud->points[i], camera_lidar_tf);
-        transformed_cloud->points.push_back(cam_cloud[i]);
+        // transformed_cloud->points.push_back(cam_cloud[i]);
         // 使用相机内参将三维空间点投影到像素平面
         int col = int(cam_cloud[i].x * fx / cam_cloud[i].z + cx);
         int row = int(cam_cloud[i].y * fy / cam_cloud[i].z + cy);
@@ -114,6 +121,7 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
             }
         }
     }
+
     double cluster_dis_table[10] = { 5, 8, 10, 2, 2, 2, 2, 3, 10 };
     removed_lessPoints_objs.clear();
     for (size_t k = 0; k < objs.size(); k++) {
@@ -134,17 +142,153 @@ void PixelCloudFusion::CloudCallback(const sensor_msgs::PointCloud2::ConstPtr& c
     publishObjs();
 
     sensor_msgs::PointCloud2 test_point;
-    pcl::toROSMsg(*transformed_cloud, test_point);
+    pcl::toROSMsg(*in_cloud_msg, test_point);
     test_point.header = cloud_msg->header;
-    transformed_pointcloud.publish(test_point);
+    test_pointcloud.publish(test_point);
 
     sensor_msgs::PointCloud2 out_cloud_msg;
     pcl::toROSMsg(*out_cloud, out_cloud_msg);
     out_cloud_msg.header = cloud_msg->header;
     pub_fusion_cloud.publish(out_cloud_msg);
 
-    // printf("%s\n", "----------------");
     usingObjs = false;
+}
+
+/**
+ * @description: 截取点云，去除高度过高的点,去除距离激光雷达中心过近的点, 去除非车辆前面的点
+ */
+void PixelCloudFusion::clipCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr& out_cloud,
+    const double& height, const double& near_dis, const double& far_dis,
+    const double& left_right_dis)
+{
+    pcl::ExtractIndices<pcl::PointXYZ> extractor;
+    extractor.setInputCloud(in_cloud);
+    pcl::PointIndices indices;
+
+#pragma omp for
+    for (size_t i = 0; i < in_cloud->points.size(); i++) {
+        double dis;
+        // 计算 需要移除的点
+        if (in_cloud->points[i].z > height) {
+            indices.indices.push_back(i);
+        } else if (in_cloud->points[i].x < 0 || in_cloud->points[i].y > left_right_dis || in_cloud->points[i].y < -left_right_dis) { // 激光雷达 x正方向朝前，y正方向朝左，z正方向朝上
+            indices.indices.push_back(i);
+        } else if ((dis = sqrt(pow(in_cloud->points[i].x, 2) + pow(in_cloud->points[i].y, 2))) < near_dis || dis > far_dis) {
+            indices.indices.push_back(i);
+        }
+    }
+    extractor.setIndices(boost::make_shared<pcl::PointIndices>(indices));
+    extractor.setNegative(true); //true removes the indices, false leaves only the indices
+    extractor.filter(*out_cloud);
+}
+
+/**
+ * @description: 基于ray_groud_filtered对地面进行分割 
+ */
+void PixelCloudFusion::removeFloorRayFiltered(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr& out_only_ground_cloud,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr& out_no_ground_cloud,
+    const double& sensor_height, const double& local_max_slope, const double& general_max_slope)
+{
+    pcl::PointIndices only_ground_indices;
+    out_only_ground_cloud->points.clear();
+    out_no_ground_cloud->points.clear();
+
+    std::vector<PointCloudXYZRT> radial_divided_cloud;
+
+    convertXYZ2XYZRT(in_cloud, radial_divided_cloud);
+
+#pragma omp for
+    for (size_t i = 0; i < radial_divided_cloud.size(); i++) {
+        float prev_radius = 0.0;
+        float prev_height = -sensor_height;
+        bool prev_ground = false;
+        bool current_ground = false;
+
+        for (size_t j = 0; j < radial_divided_cloud[i].size(); j++) {
+            float local_twoPoints_dis = radial_divided_cloud[i][j].radius - prev_radius;
+            float local_height_threshold = tan(local_max_slope * M_PI / 180.) * local_twoPoints_dis;
+            float general_height_threshold = tan(general_max_slope * M_PI / 180.) * radial_divided_cloud[i][j].radius;
+            float current_height = radial_divided_cloud[i][j].point.z;
+
+            if (radial_divided_cloud[i][j].radius > concentric_divide_distance && local_height_threshold < min_local_height_threshold) {
+                local_height_threshold = min_local_height_threshold;
+            }
+
+            if (current_height <= (prev_height + local_height_threshold) && current_height >= (prev_height - local_height_threshold)) {
+                if (!prev_ground) {
+                    if (current_height <= (-sensor_height + general_height_threshold) && current_height >= (-sensor_height - general_height_threshold)) {
+                        current_ground = true;
+                    } else {
+                        current_ground = false;
+                    }
+                } else {
+                    current_ground = true;
+                }
+            } else {
+                current_ground = false;
+            }
+
+            if (current_ground) {
+                only_ground_indices.indices.push_back(radial_divided_cloud[i][j].original_index);
+                prev_ground = true;
+            } else {
+                prev_ground = false;
+            }
+            prev_radius = radial_divided_cloud[i][j].radius;
+            prev_height = radial_divided_cloud[i][j].point.z;
+        }
+    }
+
+    pcl::ExtractIndices<pcl::PointXYZ> extractor;
+    extractor.setInputCloud(in_cloud);
+    extractor.setIndices(boost::make_shared<pcl::PointIndices>(only_ground_indices));
+
+    extractor.setNegative(false); //true removes the indices, false leaves only the indices
+    extractor.filter(*out_only_ground_cloud);
+
+    extractor.setNegative(true); //true removes the indices, false leaves only the indices
+    extractor.filter(*out_no_ground_cloud);
+}
+
+/**
+ * @description: 将原始点云转化为 XYZRadialTheta 结构的点云 
+ */
+void PixelCloudFusion::convertXYZ2XYZRT(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_cloud,
+    std::vector<PointCloudXYZRT>& out_radial_divided_cloud)
+{
+    out_radial_divided_cloud.clear();
+    double radial_divide_num = ceil(360
+        / radial_divide_angle);
+    out_radial_divided_cloud.resize(radial_divide_num);
+
+    for (size_t i = 0; i < in_cloud->points.size(); i++) {
+        PointXYZRT p;
+        float radius = (float)sqrt(in_cloud->points[i].x * in_cloud->points[i].x + in_cloud->points[i].y * in_cloud->points[i].y);
+        float thera = (float)atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI;
+
+        if (thera < 0)
+            thera += 360;
+
+        size_t radial_div = (size_t)floor(thera / radial_divide_angle);
+        size_t concentric_div = (size_t)floor(radius / concentric_divide_distance);
+
+        p.point = in_cloud->points[i];
+        p.radius = radius;
+        p.theta = thera;
+        p.radial_div = radial_div;
+        p.concentric_div = concentric_div;
+        p.original_index = i;
+
+        out_radial_divided_cloud[radial_div].push_back(p);
+    }
+
+#pragma omp for
+    for (size_t j = 0; j < out_radial_divided_cloud.size(); j++) {
+        std::sort(out_radial_divided_cloud[j].begin(), out_radial_divided_cloud[j].end(),
+            [](const PointXYZRT& a, const PointXYZRT& b) { return a.radius < b.radius; });
+    }
 }
 
 void PixelCloudFusion::calObstacleInfo(Object& in_detect_obj)
@@ -179,7 +323,7 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
     pcl::copyPointCloud(in_detect_obj.pc, *cloud_2d);
 
     for (size_t i = 0; i < cloud_2d->points.size(); i++) {
-        cloud_2d->points[i].y = 0;
+        cloud_2d->points[i].z = 0;
     }
 
     tree->setInputCloud(cloud_2d);
@@ -187,6 +331,7 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
 
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> euc;
 
+    // TODO 设置不同类别不同的聚类距离
     euc.setClusterTolerance(3);
     euc.setMinClusterSize(cluster_min_points);
     euc.setMaxClusterSize(cluster_max_points);
@@ -202,12 +347,6 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
             best_cluster_index = i;
         }
     }
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud;
-    // pcl::ExtractIndices<pcl::PointXYZ> extract;
-    // extract.setInputCloud(in_detect_obj.pc);
-    // extract.setIndices(boost::shared_ptr<::pcl::PointIndices>(&cluster_indices[best_cluster_index]));
-    // extract.setNegative(false); // true removes the indices, false leaves only the indices
-    // extract.filter(*out_cloud);
 
     pcl::PointCloud<pcl::PointXYZ> tmp_pc;
     tmp_pc.points.clear();
@@ -218,7 +357,7 @@ void PixelCloudFusion::removeOutlier(Object& in_detect_obj, const double& max_cl
         in_detect_obj.center_z = 0;
         for (size_t i = 0; i < cluster_indices[best_cluster_index].indices.size(); i++) {
             pcl::PointXYZ p = in_detect_obj.pc.points[cluster_indices[best_cluster_index].indices[i]];
-            if (p.y < 5) {
+            if (p.z < 5) {
                 // in_detect_obj.center_x += p.x;
                 // in_detect_obj.center_y += p.y;
                 // in_detect_obj.center_z += p.z;
@@ -252,6 +391,8 @@ void PixelCloudFusion::publishObjs()
     obj_marker.lifetime = ros::Duration(0.1);
     objs_marker.markers.clear();
     for (size_t k = 0; k < removed_lessPoints_objs.size(); k++) {
+
+        // Rviz marker
         obj_marker.id = k;
         category_deal(obj_marker, removed_lessPoints_objs[k]);
         obj_marker.pose.position.x = (removed_lessPoints_objs[k].xmin_3d_bbox + removed_lessPoints_objs[k].xmax_3d_bbox) / 2;
@@ -261,29 +402,41 @@ void PixelCloudFusion::publishObjs()
         obj_marker.scale.y = std::max(double(0.1), removed_lessPoints_objs[k].ymax_3d_bbox - removed_lessPoints_objs[k].ymin_3d_bbox);
         obj_marker.scale.z = std::max(double(0.1), removed_lessPoints_objs[k].zmax_3d_bbox - removed_lessPoints_objs[k].zmin_3d_bbox);
         objs_marker.markers.push_back(obj_marker);
+
+        // objs msg
+        // 障碍物中心点和id
         output_obj.id = k;
         output_obj.pose.position.x = (removed_lessPoints_objs[k].xmin_3d_bbox + removed_lessPoints_objs[k].xmax_3d_bbox) / 2;
         output_obj.pose.position.y = (removed_lessPoints_objs[k].ymin_3d_bbox + removed_lessPoints_objs[k].ymax_3d_bbox) / 2;
         output_obj.pose.position.z = (removed_lessPoints_objs[k].zmin_3d_bbox + removed_lessPoints_objs[k].zmax_3d_bbox) / 2;
+
+        // 障碍物尺度
+        output_obj.dimensions.x = obj_marker.scale.x;
+        output_obj.dimensions.y = obj_marker.scale.y;
+        output_obj.dimensions.z = obj_marker.scale.z;
+
+        // 障碍物轮廓点
         output_obj.convex_hull.polygon.points.clear();
-        geometry_msgs::Point32 pp;
-        pp.x = removed_lessPoints_objs[k].xmin_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymin_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = removed_lessPoints_objs[k].xmin_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymax_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = removed_lessPoints_objs[k].xmax_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymin_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        pp.x = removed_lessPoints_objs[k].xmax_3d_bbox;
-        pp.y = removed_lessPoints_objs[k].ymax_3d_bbox;
-        pp.z = removed_lessPoints_objs[k].zmin_3d_bbox;
-        output_obj.convex_hull.polygon.points.push_back(pp);
-        output_objs.objects.push_back(output_obj);
+        std::vector<cv::Point2f> points_2d;
+        points_2d.clear();
+        for (size_t i = 0; i < removed_lessPoints_objs[k].pc.points.size(); i++) {
+            cv::Point2f pp;
+            pp.x = removed_lessPoints_objs[k].pc.points[i].x;
+            pp.y = removed_lessPoints_objs[k].pc.points[i].y;
+            points_2d.push_back(pp);
+        }
+
+        std::vector<cv::Point2f> hull;
+        if (points_2d.size() > 0)
+            cv::convexHull(points_2d, hull);
+        output_obj.convex_hull.polygon.points.clear();
+        for (size_t i = 0; i < hull.size(); i++) {
+            geometry_msgs::Point32 pp;
+            pp.x = hull[i].x;
+            pp.y = hull[i].y;
+            pp.z = 0;
+            output_obj.convex_hull.polygon.points.push_back(pp);
+        }
     }
     objs_pub.publish(output_objs);
     objs_pub_rviz.publish(objs_marker);
@@ -366,12 +519,25 @@ pcl::PointXYZ PixelCloudFusion::TransformPoint(const pcl::PointXYZ& in_point, co
 
 void PixelCloudFusion::initROS()
 {
-    std::string pointscloud_input, image_input, camera_info_input, fusison_output_topic, transformed_cloud_topic;
+    std::string pointscloud_input, image_input, camera_info_input, fusison_output_topic, test_cloud_topic;
     nh_private.param<std::string>("pointcloud_input", pointscloud_input, "/velodyne_points");
     nh_private.param<std::string>("image_input", image_input, "/cv_camera/image_raw");
     nh_private.param<std::string>("camera_info_input", camera_info_input, "/camera_info");
     nh_private.param<std::string>("fusion_output_topic", fusison_output_topic, "/points_output");
-    nh_private.param<std::string>("transformed_cloud_topic", transformed_cloud_topic, "/transformed_cloud");
+    nh_private.param<std::string>("test_cloud_topic", test_cloud_topic, "/test_cloud");
+    nh_private.param<double>("min_local_height_threshold", min_local_height_threshold, 0.05);
+
+    nh_private.param<double>("radial_divide_angle", radial_divide_angle, 0.5);
+    nh_private.param<double>("concentric_divide_distance", concentric_divide_distance, 0.1);
+
+    nh_private.param<double>("clip_left_right_dis", clip_left_right_dis, 7);
+    nh_private.param<double>("clip_far", clip_far, 40);
+    nh_private.param<double>("clip_dis", clip_dis, 2);
+    nh_private.param<double>("clip_height", clip_height, 4.0);
+
+    nh_private.param<double>("sensor_height", sensor_height, 0.37);
+    nh_private.param<double>("local_slope_threshold", local_slope_threshold, 5.0);
+    nh_private.param<double>("general_slope_threshhold", general_slope_threshhold, 3.0);
 
     sub_cloud = nh.subscribe(pointscloud_input, 1, &PixelCloudFusion::CloudCallback, this);
     sub_image = nh.subscribe(image_input, 1, &PixelCloudFusion::ImageCallback, this);
@@ -379,9 +545,9 @@ void PixelCloudFusion::initROS()
     sub_detection = nh.subscribe("detectObjs", 1, &PixelCloudFusion::DetectionCallback, this);
 
     pub_fusion_cloud = nh.advertise<sensor_msgs::PointCloud2>(fusison_output_topic, 1);
-    transformed_pointcloud = nh.advertise<sensor_msgs::PointCloud2>(transformed_cloud_topic, 1);
-    objs_pub_rviz = nh.advertise<visualization_msgs::MarkerArray>("objs", 1);
-    objs_pub = nh.advertise<smartcar_msgs::DetectedObjectArray>("one_obj", 1);
+    test_pointcloud = nh.advertise<sensor_msgs::PointCloud2>(test_cloud_topic, 1);
+    objs_pub_rviz = nh.advertise<visualization_msgs::MarkerArray>("fusion_objs_rviz", 1);
+    objs_pub = nh.advertise<smartcar_msgs::DetectedObjectArray>("fusion_objs", 1);
 }
 
 PixelCloudFusion::PixelCloudFusion()
