@@ -80,7 +80,7 @@ private:
     void startPose_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
     void endPose_cb(const geometry_msgs::PoseStampedConstPtr& msg);
 
-    void find_nearest_pose(int& lane_id, int& point_index, const geometry_msgs::PoseStamped pose);
+    double find_nearest_pose(int& lane_id, int& point_index, const geometry_msgs::PoseStamped pose, const std::vector<path_msgs::Lane> path_list);
     void Quaternion2Euler(const geometry_msgs::Pose pose, double* roll, double* pitch, double* yaw);
     void getPathYaw(int lane_id, int point_index, double* yaw);
 
@@ -94,6 +94,7 @@ private:
 
     void marker_initial();
     void cfgCB(const global_planning::GlobalPlanningConfig& config, uint32_t level);
+    bool validate(double dist, geometry_msgs::PoseStamped pose, std::vector<path_msgs::Cross> path_list);
 
 public:
     global_plan() {}
@@ -305,7 +306,12 @@ void global_plan::startPose_cb(const geometry_msgs::PoseWithCovarianceStampedCon
     temp_Cross_vec.assign(Cross_vec.begin(), Cross_vec.end());
 
     int lane_id, point_index;
-    find_nearest_pose(lane_id, point_index, start_pose);
+    double min_dist = find_nearest_pose(lane_id, point_index, start_pose, temp_Lane_vec);
+    if (validate(min_dist, start_pose, temp_Cross_vec) == false) {
+        ROS_WARN_STREAM("Target position cannot be put at cornor, please confirm again.");
+        return;
+    }
+
     double start_roll, start_pitch, start_yaw;
     Quaternion2Euler(start_pose.pose, &start_roll, &start_pitch, &start_yaw);
     double path_yaw;
@@ -501,7 +507,11 @@ void global_plan::endPose_cb(const geometry_msgs::PoseStampedConstPtr& msg)
     }
     end_pose.pose = msg->pose;
     int lane_id, point_index;
-    find_nearest_pose(lane_id, point_index, end_pose);
+    double min_dist = find_nearest_pose(lane_id, point_index, end_pose, temp_Lane_vec);
+    if (validate(min_dist, end_pose, temp_Cross_vec) == false) {
+        ROS_WARN_STREAM("Target position cannot be put at cornor, please confirm again.");
+        return;
+    }
 
     path_msgs::Cross c_node;
     path_msgs::Lane l_node1, l_node2;
@@ -647,15 +657,15 @@ void global_plan::endPose_cb(const geometry_msgs::PoseStampedConstPtr& msg)
     is_startPose_set = false;
 }
 
-void global_plan::find_nearest_pose(int& lane_id, int& point_index, const geometry_msgs::PoseStamped pose)
+double global_plan::find_nearest_pose(int& lane_id, int& point_index, const geometry_msgs::PoseStamped pose, const std::vector<path_msgs::Lane> path_list)
 {
     int t_lane_id, t_point_index;
     double min_length = 9999;
-    for (size_t i = 0; i < temp_Lane_vec.size(); i++) {
-        for (size_t j = 0; j < temp_Lane_vec[i].path.poses.size(); j++) {
-            double t = util::distance2points(pose.pose.position, temp_Lane_vec[i].path.poses[j].pose.position);
+    for (size_t i = 0; i < path_list.size(); i++) {
+        for (size_t j = 0; j < path_list[i].path.poses.size(); j++) {
+            double t = util::distance2points(pose.pose.position, path_list[i].path.poses[j].pose.position);
             if (t < min_length) {
-                t_lane_id = temp_Lane_vec[i].id;
+                t_lane_id = path_list[i].id;
                 t_point_index = j;
                 min_length = t;
             }
@@ -667,7 +677,7 @@ void global_plan::find_nearest_pose(int& lane_id, int& point_index, const geomet
         std::cout << "Nearest lane_id     is " << lane_id << std::endl;
         std::cout << "Nearest point_index is " << point_index << std::endl;
     }
-    return;
+    return min_length;
 }
 
 // 四元数转欧拉角
@@ -1113,6 +1123,28 @@ void global_plan::smooth(smartcar_msgs::Lane& path, int start_index, int length,
         }
         Iterations++;
     }
+}
+
+bool global_plan::validate(double dist, geometry_msgs::PoseStamped pose, std::vector<path_msgs::Cross> path_list)
+{
+    double dist_to_cornor;
+    int t_lane_id, t_point_index;
+    double min_length = 9999;
+    for (size_t i = 0; i < path_list.size(); i++) {
+        for (size_t j = 0; j < path_list[i].path.poses.size(); j++) {
+            double t = util::distance2points(pose.pose.position, path_list[i].path.poses[j].pose.position);
+            if (t < min_length) {
+                t_lane_id = path_list[i].id;
+                t_point_index = j;
+                min_length = t;
+            }
+        }
+    }
+    int cross_id = t_lane_id;
+    int point_index = t_point_index;
+    if (min_length < dist)
+        return false;
+    return true;
 }
 
 } // namespace GLOBAL_PLANNER
