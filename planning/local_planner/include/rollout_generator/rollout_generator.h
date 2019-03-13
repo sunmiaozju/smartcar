@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:13:45
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-12 15:16:45
+ * @LastEditTime: 2019-03-13 19:46:06
  */
 
 #ifndef ROLLOUT_GENERATOR_H
@@ -60,7 +60,7 @@ private:
 
     void getRobotOdom_cb(const nav_msgs::OdometryConstPtr& msg);
 
-    void getGlobalPlannerPath_cb(const smartcar_msgs::LaneArrayConstPtr& msg);
+    void getGlobalPlannerPath_cb(const smartcar_msgs::LaneConstPtr& msg);
 
     void getNavGlobalPlannerPath_cb(const nav_msgs::PathConstPtr& msg);
 

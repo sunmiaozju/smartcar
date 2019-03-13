@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-12 15:43:35
+ * @LastEditTime: 2019-03-13 22:03:01
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -52,7 +52,7 @@ void RolloutGenerator::initROS()
     pub_testLane = nh.advertise<visualization_msgs::Marker>("test_lane", 1);
 
     sub_currentPose = nh.subscribe("/ndt/current_pose", 10, &RolloutGenerator::getCurrentPose_cb, this);
-    sub_globalPlannerPath = nh.subscribe("/global_path", 1, &RolloutGenerator::getNavGlobalPlannerPath_cb, this);
+    sub_globalPlannerPath = nh.subscribe("/global_path", 1, &RolloutGenerator::getGlobalPlannerPath_cb, this);
     speed = 1;
 }
 
@@ -63,7 +63,7 @@ void RolloutGenerator::initROS()
  */
 void RolloutGenerator::run()
 {
-    ros::Rate loop_rate(100);
+    ros::Rate loop_rate(10);
     while (ros::ok()) {
         ros::spinOnce();
         if (currentPose_flag && globalPaths.size() > 0) {
@@ -592,16 +592,14 @@ void RolloutGenerator::getCurrentPose_cb(const geometry_msgs::PoseStampedConstPt
     currentPose_flag = true;
 }
 
-void RolloutGenerator::getGlobalPlannerPath_cb(const smartcar_msgs::LaneArrayConstPtr& msg)
+void RolloutGenerator::getGlobalPlannerPath_cb(const smartcar_msgs::LaneConstPtr& msg)
 {
-    if (msg->lanes.size() > 0) {
+    if (msg->waypoints.size() > 0) {
         globalPaths.clear();
         std::vector<UtilityNS::WayPoint> single_path;
-        for (size_t i = 0; i < msg->lanes.size(); i++) {
-            msgLane2LocalLane(msg->lanes[i], single_path);
-            calcAngleAndCost(single_path);
-            globalPaths.push_back(single_path);
-        }
+        msgLane2LocalLane(*msg, single_path);
+        calcAngleAndCost(single_path);
+        globalPaths.push_back(single_path);
     }
 }
 

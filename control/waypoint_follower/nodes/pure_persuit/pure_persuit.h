@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-01-29 21:10:23
- * @LastEditTime: 2019-03-08 13:49:56
+ * @LastEditTime: 2019-03-13 19:35:24
  */
 #ifndef PURE_PURSUIT_H
 #define PURE_PURSUIT_H
@@ -73,7 +73,7 @@ public:
 
     void callbackFromCurrentVelocity(const geometry_msgs::TwistStampedConstPtr& msg);
 
-    void callbackFromWayPoints(const nav_msgs::PathConstPtr& msg);
+    void callbackFromWayPoints(const smartcar_msgs::LaneConstPtr& msg);
 
     // initializer
     void initForROS();
