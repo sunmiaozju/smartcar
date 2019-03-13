@@ -39,6 +39,7 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+  ../../common/utils/include
 )
 
 add_executable(global_plan_node src/global_plan_node.cpp)
