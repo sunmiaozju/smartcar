@@ -22,21 +22,35 @@ from twisted.protocols.basic import NetstringReceiver
 HOST = 'localhost'
 PORT = 9998
 
+
 class MyServerProtocol(Protocol):
     def connectionMade(self):
         self.pub_car_pose = rospy.Publisher("/car0/current_pose", PoseStamped, queue_size=10)
         peer = self.clnt = self.transport.getPeer().host
         print("...connected from : ", peer)
 
-    def dataReceived(self, data):
-        self._car_pose_cb(data)
+    # TODO: 不同的车发布不同的消息,根据car*进行区分
+    def _init_publisher(self):
+        pass
 
-    def _car_pose_cb(self, data):
+    def dataReceived(self, data):
+        self._data_cb(data)
+
+    def _data_cb(self, data):
         protoc_current_pose = protoc_msg_pb2.CurrentPose()
         protoc_current_pose.ParseFromString(data)
-        current_pose_msg = PoseStamped()
-        utils_pb2ros.PoseStamped2Msg(protoc_current_pose.msg, current_pose_msg)
-        self.pub_car_pose.publish(current_pose_msg)
+        self._car_cb(protoc_current_pose)
+
+    def _car_pose_cb(self, protoc_current_pose):
+        msg_current_pose = PoseStamped()
+        utils_pb2ros.PoseStamped2Msg(protoc_current_pose.msg, msg_current_pose)
+
+        vehicle_info = protoc_current_pose.info
+        car_vin = int(vehicle_info.vin[1:])
+        car_type = vehicle_info.vin[0]
+        car_station = vehicle_info.state
+
+        self.pub_car_pose.publish(msg_current_pose)
 
     def connectionLost(self, reason):
         print("connection lost")

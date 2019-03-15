@@ -34,9 +34,10 @@ class MyClientProtocol(Protocol):
     def _current_pose_cb(self, msg):
         CurrentPose = protoc_msg_pb2.CurrentPose()
         CurrentPose.msg_type = protoc_msg_pb2.current_pose
-        CurrentPose.info.vin = "R0000"
-        CurrentPose.info.state = True
         utils.make_PoseStamped(CurrentPose.msg, msg)
+
+        utils.make_vehicle_info(CurrentPose.info, "R0000", True)
+
         binary_msg = CurrentPose.SerializeToString()
         self.transport.write(binary_msg)
 

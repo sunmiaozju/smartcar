@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import protoc_msg_pb2
-# from proto import protoc_msg_pb2
+try:
+    import protoc_msg_pb2
+except:
+    from proto import protoc_msg_pb2
 import geometry_msgs.msg
 import std_msgs.msg
 
@@ -69,3 +71,8 @@ def make_quaternion(protoc_orientation, orientation):
     protoc_orientation.z = orientation.z
     protoc_orientation.w = orientation.w
     # return protoc_orientation
+
+def make_vehicle_info(protoc_vehicle_info, vin, state):
+    assert isinstance(protoc_vehicle_info, protoc_msg_pb2.Vehicle_Info)
+    protoc_vehicle_info.vin = vin
+    protoc_vehicle_info.state = state
