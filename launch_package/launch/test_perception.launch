@@ -22,7 +22,7 @@
 
     <!-- <node pkg="rviz" type="rviz" name="Rviz_for_perception" args="-d $(find joint_pixel_pointcloud)/rviz/perception.rviz"/> -->
 
-    <node pkg="rviz" type="rviz" name="Rviz_for_extract_path" args="-d $(find global_planning)/rviz/global_plan_lanecross.rviz" />
+    <node pkg="rviz" type="rviz" name="Rviz_for_extract_path" args="-d $(find joint_pixel_pointcloud)/rviz/perception.rviz" />
     
     <node pkg="global_planning" type="global_plan_node" name="Global_planner_with_defined_paths" output="screen">
         <param name="file_path" value="$(find global_planning)/path_file/" />

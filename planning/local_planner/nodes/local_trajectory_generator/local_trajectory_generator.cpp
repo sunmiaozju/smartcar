@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-12 15:43:59
+ * @LastEditTime: 2019-03-13 22:03:29
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -13,6 +13,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
 {
     initROS();
     currentPose_flag = false;
+    usingObjs = false;
     pre_best_index = -1;
 
     // // for test
@@ -21,7 +22,7 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
     // obj.w = 1;
     // obj.h = 1;
 
-    // obj.center.pos.x = 18.5;
+    // obj.center.pos.x = 25;
     // obj.center.pos.y = 27;
     // obj.center.pos.z = 0;
     // obj.center.v = 0;
@@ -80,29 +81,29 @@ LocalTrajectoryGenerator::~LocalTrajectoryGenerator()
 /**
  * @description: 获取障碍物数组
  */
-void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArray& msg)
+void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArrayConstPtr& msg)
 {
     detect_objs.clear();
-    for (int i = 0; i < msg.objects.size(); i++) {
+    for (int i = 0; i < msg->objects.size(); i++) {
         UtilityNS::DetectedObject obj;
-        obj.id = msg.objects[i].id;
-        obj.label = msg.objects[i].label;
+        obj.id = msg->objects[i].id;
+        obj.label = msg->objects[i].label;
 
-        obj.l = msg.objects[i].dimensions.x;
-        obj.w = msg.objects[i].dimensions.y;
-        obj.h = msg.objects[i].dimensions.z;
+        obj.l = msg->objects[i].dimensions.x;
+        obj.w = msg->objects[i].dimensions.y;
+        obj.h = msg->objects[i].dimensions.z;
 
-        obj.center.pos.x = msg.objects[i].pose.position.x;
-        obj.center.pos.y = msg.objects[i].pose.position.y;
-        obj.center.pos.z = msg.objects[i].pose.position.z;
-        obj.center.pos.yaw = tf::getYaw(msg.objects[i].pose.orientation);
+        obj.center.pos.x = msg->objects[i].pose.position.x;
+        obj.center.pos.y = msg->objects[i].pose.position.y;
+        obj.center.pos.z = msg->objects[i].pose.position.z;
+        // obj.center.pos.yaw = tf::getYaw(msg->objects[i].pose.orientation);
 
         UtilityNS::GPSPoint p;
         obj.contour.clear();
-        for (int k = 0; k < msg.objects[i].convex_hull.polygon.points.size(); k++) {
-            p.x = msg.objects[i].convex_hull.polygon.points[k].x;
-            p.y = msg.objects[i].convex_hull.polygon.points[k].y;
-            p.z = msg.objects[i].convex_hull.polygon.points[k].z;
+        for (int k = 0; k < msg->objects[i].convex_hull.polygon.points.size(); k++) {
+            p.x = msg->objects[i].convex_hull.polygon.points[k].x;
+            p.y = msg->objects[i].convex_hull.polygon.points[k].y;
+            p.z = msg->objects[i].convex_hull.polygon.points[k].z;
             obj.contour.push_back(p);
         }
         detect_objs.push_back(obj);
@@ -165,12 +166,13 @@ void LocalTrajectoryGenerator::getCurrentPose_cb(const geometry_msgs::PoseStampe
  */
 void LocalTrajectoryGenerator::run()
 {
-    ros::Rate loop_rate(100);
+    ros::Rate loop_rate(10);
     while (ros::ok()) {
         ros::spinOnce();
         UtilityNS::TrajectoryCost best_trajectory;
         if (currentPose_flag && centralPathSection.size() > 0) {
             best_trajectory = trajectory_evaluator_static(generated_rollouts, centralPathSection, current_pose, plan_params, car_info, detect_objs);
+
             best_index = best_trajectory.index;
             smartcar_msgs::Lane best_local_lane;
             best_local_lane.closest_obj_dis = best_trajectory.closest_obj_distance;
@@ -192,6 +194,7 @@ void LocalTrajectoryGenerator::run()
 
             visualInRviz();
         }
+        loop_rate.sleep();
     }
 }
 /**
@@ -243,12 +246,13 @@ void LocalTrajectoryGenerator::visualInRviz()
         visualization_msgs::MarkerArray objs_marker;
         visualization_msgs::Marker obj_marker;
 
-        obj_marker.header.frame_id = "map";
+        obj_marker.header.frame_id = "velodyne";
         obj_marker.header.stamp = ros::Time();
         obj_marker.ns = "detected_objs";
         obj_marker.type = visualization_msgs::Marker::CUBE;
         obj_marker.action = visualization_msgs::Marker::ADD;
         obj_marker.frame_locked = false;
+        obj_marker.lifetime = ros::Duration(0.1);
         for (int i = 0; i < detect_objs.size(); i++) {
             obj_marker.id = i;
             obj_marker.pose.position.x = detect_objs[i].center.pos.x;
@@ -259,7 +263,7 @@ void LocalTrajectoryGenerator::visualInRviz()
             obj_marker.scale.y = detect_objs[i].w;
             obj_marker.scale.z = detect_objs[i].h;
 
-            obj_marker.color.a = 1.0;
+            obj_marker.color.a = 0.6;
             obj_marker.color.b = 0.3;
             obj_marker.color.g = 0.5;
             obj_marker.color.r = 0.7;

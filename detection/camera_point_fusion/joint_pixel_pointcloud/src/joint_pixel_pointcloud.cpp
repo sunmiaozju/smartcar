@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 21:34:40
- * @LastEditTime: 2019-03-12 13:20:14
+ * @LastEditTime: 2019-03-13 21:37:02
  */
 #include "joint_pixel_pointcloud.h"
 
@@ -437,6 +437,7 @@ void PixelCloudFusion::publishObjs()
             pp.z = 0;
             output_obj.convex_hull.polygon.points.push_back(pp);
         }
+        output_objs.objects.push_back(output_obj);
     }
     objs_pub.publish(output_objs);
     objs_pub_rviz.publish(objs_marker);
