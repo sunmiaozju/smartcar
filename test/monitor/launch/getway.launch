@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="gateway" type="monitor.py" name="gateway_monitor" output="screen">
+        <param name="server_ip" value="127.0.0.1"/>
+        <param name="server_port" value="9999"/>
+    </node>
+
+</launch>
+

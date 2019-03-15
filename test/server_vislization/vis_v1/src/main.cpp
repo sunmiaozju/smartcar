@@ -49,8 +49,8 @@ void monitor::run()
     ros::NodeHandle nh;
     ros::NodeHandle pnh("~");
 
-    // sub_car0_pose = nh.subscribe("/car0/current_pose", 1, &monitor::car_pose_cb, this);
-    sub_car0_pose = nh.subscribe("/ndt/current_pose", 1, &monitor::car_pose_cb, this);
+    sub_car0_pose = nh.subscribe("/car0/current_pose", 1, &monitor::car_pose_cb, this);
+    // sub_car0_pose = nh.subscribe("/ndt/current_pose", 1, &monitor::car_pose_cb, this);
     pub_car0_model = nh.advertise<visualization_msgs::Marker>("/car0/Car_model", 10);
 
     ros::spin();

@@ -1,0 +1,60 @@
+syntax = "proto3";
+package protoc;
+
+enum MsgType{
+    default_remain = 0;
+    current_pose = 1;
+    lidar_vlp16 = 2;
+    camera_0 = 3;
+    vehicle_stat = 4;
+    ndt_stat = 5;
+}
+
+message BaseMsg{
+    MsgType msg_type = 1;
+}
+
+message CurrentPose{
+    MsgType msg_type = 1;
+    PoseStamped msg = 2;
+}
+
+message LidarVLP16 {
+    MsgType msg_type = 1;
+//    PointCloud2 msg = 2;
+}
+
+message PoseStamped {
+    Header header = 1;
+    Pose pose = 2;
+    
+}
+
+message Header{
+    uint32 seq = 1;
+    Time stamp = 2;
+    string frame_id =3;
+}
+
+message Pose{
+    Point position = 1;
+    Quaternion orientation = 2;
+}
+
+message Point{
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+message Quaternion{
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    float w = 4;
+}
+
+message Time{
+    int32 secs = 1;
+    int32 nsecs = 2;
+}
