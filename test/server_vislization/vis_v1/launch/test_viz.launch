@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="map_server" type="map_server" name="map_server_node" args="$(find static_map)/map_file/map.yaml"/>
+    <node pkg="rviz" type="rviz" name="Rviz_for_extract_path" args="-d $(find vis_v1)/rviz/rviz.rviz" />
+    <node pkg="vis_v1" type="main" name="visualization_v1" output="screen" />
+</launch>

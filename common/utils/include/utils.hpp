@@ -2,8 +2,10 @@
 #define __DDL_UTILS__
 
 #include <Eigen/Core>
+#include <map>
 #include <ros/ros.h>
 #include <string>
+#include <tf/transform_datatypes.h>
 #include <visualization_msgs/Marker.h>
 
 #define PI 3.1415926
@@ -109,15 +111,24 @@ double distance2points(const geometry_msgs::Point p1, const geometry_msgs::Point
     return std::fabs(std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2)));
 }
 
-// // TODO::验证正确性，增加RPY2Quaternion的变换
-// Eigen::Vector3d Quaternion2RPY(double x, double y, double z, double w)
-// {
-//     double roll, pitch, yaw;
-//     roll = std::atan2(2.0 * (w * z + x * y), 1 - 2 * (z * z + x * x));
-//     pitch = std::atan2(2.0 * (w * y + z * x), 1 - 2 * (y * y + x * x));
-//     yaw = std::asinhf(2.0 * (w * x - y * z));
-//     return Eigen::Vector3d(roll, pitch, yaw);
-// }
+// TODO::验证正确性，增加RPY2Quaternion的变换
+std::map<std::string, double> Quaternion2RPY(double x, double y, double z, double w)
+{
+    double roll, pitch, yaw;
+    // roll = std::atan2(2.0 * (w * z + x * y), 1 - 2 * (z * z + x * x));
+    // pitch = std::atan2(2.0 * (w * y + z * x), 1 - 2 * (y * y + x * x));
+    // yaw = std::asinhf(2.0 * (w * x - y * z));
+    // return Eigen::Vector3d(roll, pitch, yaw);
+
+    tf::Quaternion q(x, y, z, w);
+    tf::Matrix3x3 m(q);
+    m.getEulerYPR(yaw, pitch, roll);
+    std::map<std::string, double> res;
+    res["roll"] = roll;
+    res["pitch"] = pitch;
+    res["yaw"] = yaw;
+    return res;
+}
 
 } // namespace util
 
