@@ -25,13 +25,18 @@ PORT = 9998
 
 class MyServerProtocol(Protocol):
     def connectionMade(self):
-        self.pub_car_pose = rospy.Publisher("/car0/current_pose", PoseStamped, queue_size=10)
+        self._init_publisher()
+        # self.pub_car_pose = rospy.Publisher("/car0/current_pose", PoseStamped, queue_size=10)
         peer = self.clnt = self.transport.getPeer().host
         print("...connected from : ", peer)
 
     # TODO: 不同的车发布不同的消息,根据car*进行区分
     def _init_publisher(self):
-        pass
+        self.pub_car_pose = []
+        for i in range(10):
+            topic = "/car" + str(i) + "/current_pose"
+            pub = rospy.Publisher(topic, PoseStamped,queue_size=10)
+            self.pub_car_pose.append(pub)
 
     def dataReceived(self, data):
         self._data_cb(data)
@@ -39,7 +44,7 @@ class MyServerProtocol(Protocol):
     def _data_cb(self, data):
         protoc_current_pose = protoc_msg_pb2.CurrentPose()
         protoc_current_pose.ParseFromString(data)
-        self._car_cb(protoc_current_pose)
+        self._car_pose_cb(protoc_current_pose)
 
     def _car_pose_cb(self, protoc_current_pose):
         msg_current_pose = PoseStamped()
@@ -50,7 +55,8 @@ class MyServerProtocol(Protocol):
         car_type = vehicle_info.vin[0]
         car_station = vehicle_info.state
 
-        self.pub_car_pose.publish(msg_current_pose)
+        topic = "/car" + str(car_vin) + "/current_pose"
+        self.pub_car_pose[car_vin].publish(msg_current_pose)
 
     def connectionLost(self, reason):
         print("connection lost")

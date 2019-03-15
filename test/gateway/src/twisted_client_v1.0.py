@@ -18,7 +18,8 @@ from twisted.internet.protocol import Protocol, Factory, ClientFactory
 from twisted.internet.protocol import DatagramProtocol
 from twisted.protocols.basic import NetstringReceiver
 
-HOST = '10.0.0.15'
+# HOST = '10.0.0.15'
+HOST = "127.0.0.1"
 PORT = 9998
 
 
