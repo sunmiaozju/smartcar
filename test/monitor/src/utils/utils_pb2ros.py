@@ -1,8 +1,10 @@
-# !/usr/bin/python
+#!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-# import protoc_msg_pb2
-from proto import protoc_msg_pb2
+try:
+    from proto import protoc_msg_pb2
+except:
+    import protoc_msg_pb2
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 from std_msgs.msg import Header
 

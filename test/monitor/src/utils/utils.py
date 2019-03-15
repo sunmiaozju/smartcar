@@ -1,8 +1,8 @@
-# !/usr/bin/python
+#!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-# import protoc_msg_pb2
-from proto import protoc_msg_pb2
+import protoc_msg_pb2
+# from proto import protoc_msg_pb2
 import geometry_msgs.msg
 import std_msgs.msg
 

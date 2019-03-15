@@ -1,4 +1,4 @@
-# !/usr/bin/python
+#!/usr/bin/python
 # -*- coding:utf-8 -*-
 
 import sys
@@ -6,8 +6,10 @@ import os
 proto_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, proto_path + '/proto')
 
-# from proto import protoc_msg_pb2
-import protoc_msg_pb2
+try:
+    from proto import protoc_msg_pb2
+except:
+    import protoc_msg_pb2
 import rospy
 from geometry_msgs.msg import PoseStamped
 from utils import utils, utils_pb2ros
@@ -44,7 +46,7 @@ if __name__ == "__main__":
     rospy.init_node("gataway_server")
     factory = Factory()
     factory.protocol = MyServerProtocol
-    print "waiting for connection..."
+    print("waiting for connection...")
     reactor.listenTCP(PORT, factory)
     reactor.run()
 
