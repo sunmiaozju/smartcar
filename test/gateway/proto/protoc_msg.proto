@@ -14,9 +14,15 @@ message BaseMsg{
     MsgType msg_type = 1;
 }
 
+message Vehicle_Info{
+    string vin = 1;
+    bool state = 2;
+}
+
 message CurrentPose{
     MsgType msg_type = 1;
     PoseStamped msg = 2;
+    Vehicle_Info info = 3;
 }
 
 message LidarVLP16 {

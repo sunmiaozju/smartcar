@@ -6,7 +6,10 @@ import os
 proto_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, proto_path + '/proto')
 
-from proto import protoc_msg_pb2
+try:
+    from proto import protoc_msg_pb2
+except:
+    import protoc_msg_pb2
 import rospy
 from geometry_msgs.msg import PoseStamped
 from utils import utils, utils_pb2ros
@@ -15,7 +18,7 @@ from twisted.internet.protocol import Protocol, Factory, ClientFactory
 from twisted.internet.protocol import DatagramProtocol
 from twisted.protocols.basic import NetstringReceiver
 
-HOST = 'localhost'
+HOST = '10.0.0.15'
 PORT = 9998
 
 
@@ -25,11 +28,14 @@ class MyClientProtocol(Protocol):
         print("client connected to %s:%s" % (HOST, PORT))
 
     def _add_sub(self):
-        rospy.Subscriber("/ndt/current_pose", PoseStamped, self._current_pose_cb)
+        rospy.Subscriber("/ndt/current_pose", PoseStamped,
+                         self._current_pose_cb)
 
     def _current_pose_cb(self, msg):
         CurrentPose = protoc_msg_pb2.CurrentPose()
         CurrentPose.msg_type = protoc_msg_pb2.current_pose
+        CurrentPose.info.vin = "R0000"
+        CurrentPose.info.state = True
         utils.make_PoseStamped(CurrentPose.msg, msg)
         binary_msg = CurrentPose.SerializeToString()
         self.transport.write(binary_msg)

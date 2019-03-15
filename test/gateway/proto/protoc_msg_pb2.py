@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='protoc',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x10protoc_msg.proto\x12\x06protoc\",\n\x07\x42\x61seMsg\x12!\n\x08msg_type\x18\x01 \x01(\x0e\x32\x0f.protoc.MsgType\"R\n\x0b\x43urrentPose\x12!\n\x08msg_type\x18\x01 \x01(\x0e\x32\x0f.protoc.MsgType\x12 \n\x03msg\x18\x02 \x01(\x0b\x32\x13.protoc.PoseStamped\"/\n\nLidarVLP16\x12!\n\x08msg_type\x18\x01 \x01(\x0e\x32\x0f.protoc.MsgType\"I\n\x0bPoseStamped\x12\x1e\n\x06header\x18\x01 \x01(\x0b\x32\x0e.protoc.Header\x12\x1a\n\x04pose\x18\x02 \x01(\x0b\x32\x0c.protoc.Pose\"D\n\x06Header\x12\x0b\n\x03seq\x18\x01 \x01(\r\x12\x1b\n\x05stamp\x18\x02 \x01(\x0b\x32\x0c.protoc.Time\x12\x10\n\x08\x66rame_id\x18\x03 \x01(\t\"P\n\x04Pose\x12\x1f\n\x08position\x18\x01 \x01(\x0b\x32\r.protoc.Point\x12\'\n\x0borientation\x18\x02 \x01(\x0b\x32\x12.protoc.Quaternion\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"8\n\nQuaternion\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\x12\t\n\x01w\x18\x04 \x01(\x02\"#\n\x04Time\x12\x0c\n\x04secs\x18\x01 \x01(\x05\x12\r\n\x05nsecs\x18\x02 \x01(\x05*n\n\x07MsgType\x12\x12\n\x0e\x64\x65\x66\x61ult_remain\x10\x00\x12\x10\n\x0c\x63urrent_pose\x10\x01\x12\x0f\n\x0blidar_vlp16\x10\x02\x12\x0c\n\x08\x63\x61mera_0\x10\x03\x12\x10\n\x0cvehicle_stat\x10\x04\x12\x0c\n\x08ndt_stat\x10\x05\x62\x06proto3')
+  serialized_pb=_b('\n\x10protoc_msg.proto\x12\x06protoc\",\n\x07\x42\x61seMsg\x12!\n\x08msg_type\x18\x01 \x01(\x0e\x32\x0f.protoc.MsgType\"*\n\x0cVehicle_Info\x12\x0b\n\x03vin\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\x08\"v\n\x0b\x43urrentPose\x12!\n\x08msg_type\x18\x01 \x01(\x0e\x32\x0f.protoc.MsgType\x12 \n\x03msg\x18\x02 \x01(\x0b\x32\x13.protoc.PoseStamped\x12\"\n\x04info\x18\x03 \x01(\x0b\x32\x14.protoc.Vehicle_Info\"/\n\nLidarVLP16\x12!\n\x08msg_type\x18\x01 \x01(\x0e\x32\x0f.protoc.MsgType\"I\n\x0bPoseStamped\x12\x1e\n\x06header\x18\x01 \x01(\x0b\x32\x0e.protoc.Header\x12\x1a\n\x04pose\x18\x02 \x01(\x0b\x32\x0c.protoc.Pose\"D\n\x06Header\x12\x0b\n\x03seq\x18\x01 \x01(\r\x12\x1b\n\x05stamp\x18\x02 \x01(\x0b\x32\x0c.protoc.Time\x12\x10\n\x08\x66rame_id\x18\x03 \x01(\t\"P\n\x04Pose\x12\x1f\n\x08position\x18\x01 \x01(\x0b\x32\r.protoc.Point\x12\'\n\x0borientation\x18\x02 \x01(\x0b\x32\x12.protoc.Quaternion\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"8\n\nQuaternion\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\x12\t\n\x01w\x18\x04 \x01(\x02\"#\n\x04Time\x12\x0c\n\x04secs\x18\x01 \x01(\x05\x12\r\n\x05nsecs\x18\x02 \x01(\x05*n\n\x07MsgType\x12\x12\n\x0e\x64\x65\x66\x61ult_remain\x10\x00\x12\x10\n\x0c\x63urrent_pose\x10\x01\x12\x0f\n\x0blidar_vlp16\x10\x02\x12\x0c\n\x08\x63\x61mera_0\x10\x03\x12\x10\n\x0cvehicle_stat\x10\x04\x12\x0c\n\x08ndt_stat\x10\x05\x62\x06proto3')
 )
 
 _MSGTYPE = _descriptor.EnumDescriptor(
@@ -57,8 +57,8 @@ _MSGTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=571,
-  serialized_end=681,
+  serialized_start=651,
+  serialized_end=761,
 )
 _sym_db.RegisterEnumDescriptor(_MSGTYPE)
 
@@ -103,6 +103,44 @@ _BASEMSG = _descriptor.Descriptor(
 )
 
 
+_VEHICLE_INFO = _descriptor.Descriptor(
+  name='Vehicle_Info',
+  full_name='protoc.Vehicle_Info',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='vin', full_name='protoc.Vehicle_Info.vin', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='state', full_name='protoc.Vehicle_Info.state', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=74,
+  serialized_end=116,
+)
+
+
 _CURRENTPOSE = _descriptor.Descriptor(
   name='CurrentPose',
   full_name='protoc.CurrentPose',
@@ -124,6 +162,13 @@ _CURRENTPOSE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='info', full_name='protoc.CurrentPose.info', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -136,8 +181,8 @@ _CURRENTPOSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=74,
-  serialized_end=156,
+  serialized_start=118,
+  serialized_end=236,
 )
 
 
@@ -167,8 +212,8 @@ _LIDARVLP16 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=158,
-  serialized_end=205,
+  serialized_start=238,
+  serialized_end=285,
 )
 
 
@@ -205,8 +250,8 @@ _POSESTAMPED = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=207,
-  serialized_end=280,
+  serialized_start=287,
+  serialized_end=360,
 )
 
 
@@ -250,8 +295,8 @@ _HEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=282,
-  serialized_end=350,
+  serialized_start=362,
+  serialized_end=430,
 )
 
 
@@ -288,8 +333,8 @@ _POSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=352,
-  serialized_end=432,
+  serialized_start=432,
+  serialized_end=512,
 )
 
 
@@ -333,8 +378,8 @@ _POINT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=434,
-  serialized_end=474,
+  serialized_start=514,
+  serialized_end=554,
 )
 
 
@@ -385,8 +430,8 @@ _QUATERNION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=476,
-  serialized_end=532,
+  serialized_start=556,
+  serialized_end=612,
 )
 
 
@@ -423,13 +468,14 @@ _TIME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=534,
-  serialized_end=569,
+  serialized_start=614,
+  serialized_end=649,
 )
 
 _BASEMSG.fields_by_name['msg_type'].enum_type = _MSGTYPE
 _CURRENTPOSE.fields_by_name['msg_type'].enum_type = _MSGTYPE
 _CURRENTPOSE.fields_by_name['msg'].message_type = _POSESTAMPED
+_CURRENTPOSE.fields_by_name['info'].message_type = _VEHICLE_INFO
 _LIDARVLP16.fields_by_name['msg_type'].enum_type = _MSGTYPE
 _POSESTAMPED.fields_by_name['header'].message_type = _HEADER
 _POSESTAMPED.fields_by_name['pose'].message_type = _POSE
@@ -437,6 +483,7 @@ _HEADER.fields_by_name['stamp'].message_type = _TIME
 _POSE.fields_by_name['position'].message_type = _POINT
 _POSE.fields_by_name['orientation'].message_type = _QUATERNION
 DESCRIPTOR.message_types_by_name['BaseMsg'] = _BASEMSG
+DESCRIPTOR.message_types_by_name['Vehicle_Info'] = _VEHICLE_INFO
 DESCRIPTOR.message_types_by_name['CurrentPose'] = _CURRENTPOSE
 DESCRIPTOR.message_types_by_name['LidarVLP16'] = _LIDARVLP16
 DESCRIPTOR.message_types_by_name['PoseStamped'] = _POSESTAMPED
@@ -454,6 +501,13 @@ BaseMsg = _reflection.GeneratedProtocolMessageType('BaseMsg', (_message.Message,
   # @@protoc_insertion_point(class_scope:protoc.BaseMsg)
   ))
 _sym_db.RegisterMessage(BaseMsg)
+
+Vehicle_Info = _reflection.GeneratedProtocolMessageType('Vehicle_Info', (_message.Message,), dict(
+  DESCRIPTOR = _VEHICLE_INFO,
+  __module__ = 'protoc_msg_pb2'
+  # @@protoc_insertion_point(class_scope:protoc.Vehicle_Info)
+  ))
+_sym_db.RegisterMessage(Vehicle_Info)
 
 CurrentPose = _reflection.GeneratedProtocolMessageType('CurrentPose', (_message.Message,), dict(
   DESCRIPTOR = _CURRENTPOSE,
