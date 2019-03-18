@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-25 14:41:15
- * @LastEditTime: 2019-03-07 21:50:19
+ * @LastEditTime: 2019-03-18 17:06:33
  */
 #ifndef COMMON_H
 #define COMMON_H
@@ -204,6 +204,8 @@ public:
     double w;
     double l;
     double h;
+
+    ros::Time start_time;
 
     DetectedObject()
     {

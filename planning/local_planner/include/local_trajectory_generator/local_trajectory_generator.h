@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:55:06
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-13 19:41:59
+ * @LastEditTime: 2019-03-18 19:42:10
  */
 
 #ifndef LOCAL_TRAJECTORY_GENERATOR_H
@@ -16,6 +16,7 @@
 #include <smartcar_msgs/Lane.h>
 #include <smartcar_msgs/LaneArray.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include "utils/utils.h"
@@ -23,6 +24,7 @@
 namespace LocalTrajectoryGeneratorNS {
 class LocalTrajectoryGenerator {
     ros::NodeHandle nh;
+    ros::NodeHandle nh_private;
     ros::Subscriber sub_currentPose;
     ros::Subscriber sub_localRollouts;
     ros::Subscriber sub_detectedObjects;
@@ -32,6 +34,7 @@ class LocalTrajectoryGenerator {
     ros::Publisher pub_LocalWeightedTrajectory;
     ros::Publisher pub_TrajectoryCost;
     ros::Publisher pub_testLane;
+    ros::Publisher pub_test_points;
 
     std::vector<UtilityNS::WayPoint> centralPathSection;
     UtilityNS::WayPoint current_pose;
@@ -45,8 +48,14 @@ class LocalTrajectoryGenerator {
     double pre_best_index;
     double best_index;
     std::vector<UtilityNS::DetectedObject> detect_objs;
+    std::vector<UtilityNS::DetectedObject> detect_objs_tmp;
 
-    void getCurrentPose_cb(const geometry_msgs::PoseStampedConstPtr& msg);
+    bool velodyne_map_tf_ok;
+    tf::TransformListener transform_listener;
+    tf::StampedTransform velodyne_map_tf;
+
+    void
+    getCurrentPose_cb(const geometry_msgs::PoseStampedConstPtr& msg);
     void getRolloutPaths_cb(const smartcar_msgs::LaneArrayConstPtr& msg);
     void getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArrayConstPtr& msg);
     void getCentralPathSection_cb(const smartcar_msgs::LaneConstPtr& msg);
@@ -70,6 +79,11 @@ class LocalTrajectoryGenerator {
         const UtilityNS::RelativeInfo& p2);
     void normalizeCosts(std::vector<UtilityNS::TrajectoryCost>& trajectory_cost);
     void visualInRviz();
+    tf::StampedTransform FindTransform(const std::string& target_frame, const std::string source_frame);
+    UtilityNS::GPSPoint TransformPoint(const UtilityNS::GPSPoint& in_point,
+        const tf::StampedTransform& in_transform);
+    void test_visual_rviz(const std::vector<UtilityNS::WayPoint>& in_points);
+    void set_detectObj(UtilityNS::DetectedObject& out_obj, const smartcar_msgs::DetectedObjectArrayConstPtr& msg, const double& i);
 
 public:
     LocalTrajectoryGenerator();

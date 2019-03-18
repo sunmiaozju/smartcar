@@ -1,4 +1,14 @@
 <launch>
     <node pkg="local_planner" type="local_trajectory_generator_node" name="local_trajectory_generator_node" output="screen">
+        <param name="horizonDistance" value="200"/>
+        <param name="rollOutNumber" value="16"/>
+        <param name="rollOutDensity" value="0.2"/>
+        <param name="horizontalSafetyDistancel" value="1"/>
+        <param name="verticalSafetyDistance" value="1"/>
+        <param name="minFollowingDistance" value="50"/>
+        <param name="lateralSkipDistance" value="6.0"/>
+        <param name="width" value="0.5"/>
+        <param name="length" value="0.68"/>
+        <param name="wheel_base" value="0.48"/>
     </node>
-</launch>
+</launch> 
