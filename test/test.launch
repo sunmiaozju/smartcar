@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find vis_v1)/launch/test_viz.launch" />
+    <node pkg="gateway" type="twisted_server_v1.0.py" name="pose_server"/>
+</launch>
