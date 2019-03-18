@@ -138,7 +138,7 @@ Visualization Manager:
       Marker Topic: /marker/start_pose
       Name: StartPosition
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -146,7 +146,7 @@ Visualization Manager:
       Marker Topic: /marker/end_pose
       Name: EndPosition
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -154,7 +154,7 @@ Visualization Manager:
       Marker Topic: /car_model
       Name: CarModel
       Namespaces:
-        {}
+        car: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -200,7 +200,7 @@ Visualization Manager:
       Marker Topic: /target_waypoint
       Name: target_waypoint
       Namespaces:
-        {}
+        target_waypoint: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -224,7 +224,7 @@ Visualization Manager:
       Marker Topic: /local_trajectories_rviz
       Name: lcoal_trajectories
       Namespaces:
-        {}
+        trajectories: true
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -240,19 +240,19 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /planner_objs_rviz
       Name: planner_obstacle
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /test_points
       Name: test_points
       Namespaces:
-        {}
+        test_points: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -289,11 +289,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 7.46886253
+      Scale: 31.2026005
       Target Frame: velodyne
       Value: TopDownOrtho (rviz)
-      X: 50.6184235
-      Y: 46.429081
+      X: 10.320116
+      Y: 10.8824692
     Saved:
       - Angle: 0
         Class: rviz/TopDownOrtho

@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-18 20:16:55
+ * @LastEditTime: 2019-03-18 21:29:45
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -87,11 +87,11 @@ LocalTrajectoryGenerator::~LocalTrajectoryGenerator()
  */
 void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::DetectedObjectArrayConstPtr& msg)
 {
-    if (detect_objs.size() == 0) {
-        UtilityNS::DetectedObject obj_zero;
-        set_detectObj(obj_zero, msg, 0);
-        detect_objs.push_back(obj_zero);
-    }
+    // if (detect_objs.size() == 0) {
+    //     UtilityNS::DetectedObject obj_zero;
+    //     set_detectObj(obj_zero, msg, 0);
+    //     detect_objs.push_back(obj_zero);
+    // }
     detect_objs_tmp.clear();
     bool flag_similar_objs = false;
     for (int i = 0; i < msg->objects.size(); i++) {
@@ -115,13 +115,18 @@ void LocalTrajectoryGenerator::getDetectedObjects_cb(const smartcar_msgs::Detect
     }
 
     detect_objs.insert(detect_objs.end(), detect_objs_tmp.begin(), detect_objs_tmp.end());
+    // printf("%d", int(detect_objs.size()));
 
     // 去除掉已经过期的障碍点
+    detect_objs_tmp.clear();
     for (size_t i = 0; i < detect_objs.size(); i++) {
-        if (detect_objs[i].start_time - ros::Time::now() > ros::Duration(0.5)) {
-            detect_objs.erase(detect_objs.begin() + i);
+        if (ros::Time::now() - detect_objs[i].start_time < ros::Duration(0.5)) {
+            // detect_objs.erase(detect_objs.begin() + i);
+            detect_objs_tmp.push_back(detect_objs[i]);
         }
     }
+    detect_objs = detect_objs_tmp;
+    detect_objs_tmp.clear();
 }
 
 /**
