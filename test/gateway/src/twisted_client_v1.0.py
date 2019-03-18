@@ -37,7 +37,7 @@ class MyClientProtocol(Protocol):
         CurrentPose.msg_type = protoc_msg_pb2.current_pose
         utils.make_PoseStamped(CurrentPose.msg, msg)
 
-        utils.make_vehicle_info(CurrentPose.info, "R0000", True)
+        utils.make_vehicle_info(CurrentPose.info, "10000000", True)
 
         binary_msg = CurrentPose.SerializeToString()
         self.transport.write(binary_msg)

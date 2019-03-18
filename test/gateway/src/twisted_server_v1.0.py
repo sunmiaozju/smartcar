@@ -35,7 +35,7 @@ class MyServerProtocol(Protocol):
         self.pub_car_pose = []
         for i in range(10):
             topic = "/car" + str(i) + "/current_pose"
-            pub = rospy.Publisher(topic, PoseStamped,queue_size=10)
+            pub = rospy.Publisher(topic, PoseStamped, queue_size=10)
             self.pub_car_pose.append(pub)
 
     def dataReceived(self, data):
@@ -51,11 +51,11 @@ class MyServerProtocol(Protocol):
         utils_pb2ros.PoseStamped2Msg(protoc_current_pose.msg, msg_current_pose)
 
         vehicle_info = protoc_current_pose.info
-        car_vin = int(vehicle_info.vin[1:])
-        car_type = vehicle_info.vin[0]
+        car_vin = int(vehicle_info.vin)
+        car_id = car_vin % 10000000
         car_station = vehicle_info.state
 
-        topic = "/car" + str(car_vin) + "/current_pose"
+        topic = "/car" + str(car_id) + "/current_pose"
         self.pub_car_pose[car_vin].publish(msg_current_pose)
 
     def connectionLost(self, reason):
@@ -69,4 +69,3 @@ if __name__ == "__main__":
     print("waiting for connection...")
     reactor.listenTCP(PORT, factory)
     reactor.run()
-
