@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-18 21:29:45
+ * @LastEditTime: 2019-03-18 22:58:34
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -18,38 +18,6 @@ LocalTrajectoryGenerator::LocalTrajectoryGenerator()
 
 {
     initROS();
-
-    // // for test
-    // UtilityNS::DetectedObject obj;
-    // obj.l = 1;
-    // obj.w = 1;
-    // obj.h = 1;
-
-    // obj.center.pos.x = 25;
-    // obj.center.pos.y = 27;
-    // obj.center.pos.z = 0;
-    // obj.center.v = 0;
-
-    // UtilityNS::GPSPoint p;
-    // obj.contour.clear();
-
-    // p.x = obj.center.pos.x - 0.5;
-    // p.y = obj.center.pos.y + 0.5;
-    // p.z = 0;
-    // obj.contour.push_back(p);
-    // p.x = obj.center.pos.x + 0.5;
-    // p.y = obj.center.pos.y + 0.5;
-    // p.z = 0;
-    // obj.contour.push_back(p);
-    // p.x = obj.center.pos.x - 0.5;
-    // p.y = obj.center.pos.y - 0.5;
-    // p.z = 0;
-    // obj.contour.push_back(p);
-    // p.x = obj.center.pos.x + 0.5;
-    // p.y = obj.center.pos.y - 0.5;
-    // p.z = 0;
-    // obj.contour.push_back(p);
-    // detect_objs.push_back(obj);
 }
 
 void LocalTrajectoryGenerator::initROS()
@@ -215,6 +183,8 @@ void LocalTrajectoryGenerator::getCurrentPose_cb(const geometry_msgs::PoseStampe
 void LocalTrajectoryGenerator::run()
 {
     ros::Rate loop_rate(10);
+    double pre_index = -1;
+    double pre_pre_index = -1;
     while (ros::ok()) {
         ros::spinOnce();
         UtilityNS::TrajectoryCost best_trajectory;
@@ -222,7 +192,8 @@ void LocalTrajectoryGenerator::run()
         if (currentPose_flag && centralPathSection.size() > 0 && velodyne_map_tf_ok) {
             best_trajectory = trajectory_evaluator_static(generated_rollouts, centralPathSection, current_pose, plan_params, car_info, detect_objs);
 
-            best_index = best_trajectory.index;
+            best_index = floor(0.6 * best_trajectory.index + 0.25 * pre_index + 0.15 * pre_pre_index);
+
             smartcar_msgs::Lane best_local_lane;
             best_local_lane.closest_obj_dis = best_trajectory.closest_obj_distance;
             best_local_lane.is_blocked = best_trajectory.bBlocked;
@@ -241,7 +212,8 @@ void LocalTrajectoryGenerator::run()
                 local_trajectories_msg.lanes.push_back(lane_msg);
             }
             pub_LocalWeightedTrajectory.publish(local_trajectories_msg);
-
+            pre_pre_index = pre_index;
+            pre_index = best_index;
             visualInRviz();
         }
         loop_rate.sleep();
@@ -575,8 +547,8 @@ void LocalTrajectoryGenerator::calLateralAndLongitudinalCostsStatic(std::vector<
 
                 lateralDist = fabs(contour_rela_info.perp_distance - distance_from_center) * 2;
 
-                if (lateralDist < 2 && longitudinalDist < params.minFollowingDistance && longitudinalDist >= -critical_long_back_distance)
-                    trajectoryCosts[i].bBlocked = true;
+                // if (lateralDist < 2 && longitudinalDist < params.minFollowingDistance && longitudinalDist >= -critical_long_back_distance)
+                //     trajectoryCosts[i].bBlocked = true;
 
                 if (lateralDist != 0)
                     trajectoryCosts[i].lateral_cost += 1.0 / lateralDist;
@@ -635,7 +607,7 @@ tf::StampedTransform LocalTrajectoryGenerator::FindTransform(const std::string& 
         velodyne_map_tf_ok = true;
         // ROS_INFO("[local_planner_trajectories_generator] : velodyne-map-tf obtained");
     } catch (tf::TransformException ex) {
-        ROS_INFO("[local_planner_trajectories_generator] : %s", ex.what());
+        ROS_INFO("[local_planner_trajectories_generator] : find tf failed");
     }
     return transform;
 }
