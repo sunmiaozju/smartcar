@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:13:45
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-13 19:46:06
+ * @LastEditTime: 2019-03-15 11:50:55
  */
 
 #ifndef ROLLOUT_GENERATOR_H
@@ -38,6 +38,8 @@ private:
     bool currentPose_flag;
 
     ros::NodeHandle nh;
+    ros::NodeHandle nh_private;
+
     ros::Publisher pub_localTrajectories;
     ros::Publisher pub_localTrajectoriesRviz;
     ros::Publisher pub_centralPathSection;

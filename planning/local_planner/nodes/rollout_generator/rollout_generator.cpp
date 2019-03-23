@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-04 11:46:57
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-13 22:03:01
+ * @LastEditTime: 2019-03-18 10:18:58
  */
 
 #include <rollout_generator/rollout_generator.h>
@@ -13,6 +13,7 @@ using namespace UtilityNS;
 
 namespace RolloutGeneratorNS {
 RolloutGenerator::RolloutGenerator()
+    : nh_private("~")
 {
     initROS();
     currentPose_flag = false;
@@ -24,27 +25,27 @@ RolloutGenerator::~RolloutGenerator()
 
 void RolloutGenerator::initROS()
 {
-    nh.param<double>("/rollout_generator_node/samplingTipMargin", PlanningParams.carTipMargin, 4);
-    nh.param<double>("/rollout_generator_node/samplingOutMargin", PlanningParams.rollInMargin, 16);
-    nh.param<double>("/rollout_generator_node/samplingSpeedFactor", PlanningParams.rollInSpeedFactor, 0.25);
-    nh.param<bool>("/rollout_generator_node/enableHeadingSmoothing", PlanningParams.enableHeadingSmoothing, false);
+    nh_private.param<double>("samplingTipMargin", PlanningParams.carTipMargin, 4);
+    nh_private.param<double>("samplingOutMargin", PlanningParams.rollInMargin, 16);
+    nh_private.param<double>("samplingSpeedFactor", PlanningParams.rollInSpeedFactor, 0.25);
+    nh_private.param<bool>("enableHeadingSmoothing", PlanningParams.enableHeadingSmoothing, false);
 
-    nh.param<double>("/rollout_generator_node/horizonDistance", PlanningParams.horizonDistance, 200);
-    nh.param<double>("/rollout_generaror_node/pathDensity", PlanningParams.pathDensity, 0.5);
-    nh.param<bool>("/rollout_generaror_node/enableLaneChange", PlanningParams.enableLaneChange, false);
-    nh.param<double>("/rollout_generaror_node/maxLocalPlanDistance", PlanningParams.microPlanDistance, 50);
+    nh_private.param<double>("horizonDistance", PlanningParams.horizonDistance, 200);
+    nh_private.param<double>("pathDensity", PlanningParams.pathDensity, 0.5);
+    nh_private.param<bool>("enableLaneChange", PlanningParams.enableLaneChange, false);
+    nh_private.param<double>("maxLocalPlanDistance", PlanningParams.microPlanDistance, 30);
 
-    nh.param<double>("/rollout_generaror_node/maxVelocity", PlanningParams.maxSpeed, 6.0);
-    nh.param<double>("/rollout_generaror_node/minVelocity", PlanningParams.minSpeed, 0.1);
+    nh_private.param<double>("maxVelocity", PlanningParams.maxSpeed, 6.0);
+    nh_private.param<double>("minVelocity", PlanningParams.minSpeed, 0.1);
 
-    nh.param<double>("/rollout_generaror_node/rollOutDensity", PlanningParams.rollOutDensity, 0.5);
-    nh.param<int>("/rollout_generaror_node/rollOutNumber", PlanningParams.rollOutNumber, 6);
+    nh_private.param<double>("rollOutDensity", PlanningParams.rollOutDensity, 0.5);
+    nh_private.param<int>("rollOutsNumber", PlanningParams.rollOutNumber, 6);
 
-    nh.param<double>("/rollout_generaror_node/smoothingDataWeight", PlanningParams.smoothingDataWeight, 0.45);
-    nh.param<double>("/rollout_generaror_node/smoothingSmoothWeight", PlanningParams.smoothingSmoothWeight, 0.4);
-    nh.param<double>("/rollout_generaror_node/smoothingToleranceError", PlanningParams.smoothingToleranceError, 0.05);
+    nh_private.param<double>("smoothingDataWeight", PlanningParams.smoothingDataWeight, 0.45);
+    nh_private.param<double>("smoothingSmoothWeight", PlanningParams.smoothingSmoothWeight, 0.4);
+    nh_private.param<double>("smoothingToleranceError", PlanningParams.smoothingToleranceError, 0.05);
 
-    nh.param<double>("/rollout_generaror_node/speedProfileFactor", PlanningParams.speedProfileFactor, 1.2);
+    nh_private.param<double>("speedProfileFactor", PlanningParams.speedProfileFactor, 1.2);
 
     pub_localTrajectories = nh.advertise<smartcar_msgs::LaneArray>("local_rollouts", 1);
     pub_localTrajectoriesRviz = nh.advertise<visualization_msgs::MarkerArray>("local_rollouts_rviz", 1);
@@ -70,7 +71,7 @@ void RolloutGenerator::run()
             globalPathSections.clear();
             for (size_t i = 0; i < globalPaths.size(); i++) {
                 centralTrajectorySmoothed.clear();
-                extractPartFromTrajectory(globalPaths[i], current_pose, 50,
+                extractPartFromTrajectory(globalPaths[i], current_pose, PlanningParams.microPlanDistance,
                     PlanningParams.pathDensity, centralTrajectorySmoothed);
                 globalPathSections.push_back(centralTrajectorySmoothed);
             }
@@ -252,7 +253,7 @@ void RolloutGenerator::calculateRollInTrajectories(const UtilityNS::WayPoint& ca
     }
 
     start_index = close_index;
-    end_index = far_index;
+    end_index = far_index; // end_index是第二个阶段结尾的点坐标
     end_laterals = end_distance_list;
 
     //calculate the actual calculation starting index
@@ -266,7 +267,7 @@ void RolloutGenerator::calculateRollInTrajectories(const UtilityNS::WayPoint& ca
         if (d_limit > carTipMargin)
             break;
 
-        smoothing_start_index++;
+        smoothing_start_index++; // 这个是一个阶段结尾的点下标
     }
 
     d_limit = 0;
@@ -278,6 +279,7 @@ void RolloutGenerator::calculateRollInTrajectories(const UtilityNS::WayPoint& ca
 
         smoothing_end_index++;
     }
+    // printf("%s %d %d %d \n", "----------------", int(smoothing_start_index), int(end_index), int(originalCenter.size()));
 
     int nSteps = end_index - smoothing_start_index;
 
@@ -363,7 +365,6 @@ void RolloutGenerator::calculateRollInTrajectories(const UtilityNS::WayPoint& ca
 
         if (d_limit > max_roll_distance)
             break;
-
         p = originalCenter.at(j);
         double original_speed = p.v;
         for (unsigned int i = 0; i < rollInPaths.size(); i++) {

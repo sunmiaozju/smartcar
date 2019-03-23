@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-18 17:07:29
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-07 20:28:24
+ * @LastEditTime: 2019-03-18 13:35:57
  */
 
 #include <float.h>
@@ -146,8 +146,6 @@ double diffBetweenTwoAngle(const double& a1, const double& a2)
 
 /**
  * @description: 计算某一个轨迹到某一个点的相对位置
- * @param {type} 
- * @return: 
  */
 bool getRelativeInfo(const std::vector<UtilityNS::WayPoint>& trajectory,
     const UtilityNS::WayPoint& p,

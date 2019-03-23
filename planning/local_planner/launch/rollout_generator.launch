@@ -1,17 +1,21 @@
 <launch>
 	<!-- Trajectory Generation Specific Parameters -->
 	<arg name="samplingTipMargin" 		default="4"  /> 
-	<arg name="samplingOutMargin" 		default="16" /> 
+	<arg name="samplingOutMargin" 		default="15" /> 
+	<arg name="maxLocalPlanDistance" 	default="20" />	
+
 	<arg name="samplingSpeedFactor" 	default="0.25" />		
 	<arg name="enableHeadingSmoothing" 	default="false" />
 		
 	<arg name="pathDensity" 			default="0.5" />
-	<arg name="rollOutDensity" 			default="0.5" />
-	<arg name="rollOutsNumber" 			default="6"    />
+	
+	<!-- 这个产生可选轨迹数目的参数必须要和local_trajectories_generator里面的轨迹数目一起修改 -->
+	<arg name="rollOutsNumber" 			default="16"  />
+	 <!--这个也要和local_trajectories里面的参数一起修改  -->
+	<arg name="rollOutDensity" 			default="0.2" />
 	
 	<arg name="maxVelocity" 			default="6.0" />
 	<arg name="minVelocity" 			default="0.1" />	
-	<arg name="maxLocalPlanDistance" 	default="50" />	
 	<arg name="horizonDistance" 		default="200"  />
 	
 	<arg name="speedProfileFactor"		default="1.2"  />
@@ -43,8 +47,7 @@
 		<param name="smoothingToleranceError"	value="$(arg smoothingToleranceError)"  />
 		
 		<param name="enableLaneChange" 			value="$(arg enableLaneChange)" />	
-		
-		
+	
 	</node>				
 			
 </launch>

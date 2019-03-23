@@ -4,12 +4,13 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-25 14:41:15
- * @LastEditTime: 2019-03-07 21:50:19
+ * @LastEditTime: 2019-03-18 20:57:02
  */
 #ifndef COMMON_H
 #define COMMON_H
 
 #include <math.h>
+#include <ros/ros.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -204,6 +205,8 @@ public:
     double w;
     double l;
     double h;
+
+    ros::Time start_time;
 
     DetectedObject()
     {
