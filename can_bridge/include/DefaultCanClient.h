@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-25 17:14:07
- * @LastEditTime: 2019-03-25 22:23:01
+ * @LastEditTime: 2019-03-26 18:02:40
  */
 #include "CanClient.h"
 #include "ErrorCode.h"
@@ -24,7 +24,7 @@ private:
 
     std::set<CANListener*> listeners;
 
-    int offer(Serializable* ptr);
+    int offer(Serializable* pMsg);
 
     int put(Serializable* ptr, timeval* timeout);
 
@@ -48,8 +48,6 @@ public:
     void shutdown() override;
 
     int writeSendMsg(SendMsg* pMsg) override;
-
-    int writeSendMsg(SendMsg* pMsg, timeval* timeout) override;
 
 protected:
     void run();

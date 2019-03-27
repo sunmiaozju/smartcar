@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="can_bridge" name="socketcan_node" type="socketcan_node" output="screen">
+        <param name="dev" type="string" value="can0"/>
+    </node>
+
+</launch>

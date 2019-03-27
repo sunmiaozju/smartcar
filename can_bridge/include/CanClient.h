@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-25 15:25:24
- * @LastEditTime: 2019-03-25 22:41:58
+ * @LastEditTime: 2019-03-26 19:45:18
  */
 
 #include "Msg.h"
@@ -45,6 +45,6 @@ public:
 
     virtual int writeSendMsg(SendMsg* pMsg) = 0;
 
-    virtual int writeSendMsg(SendMsg* pMsg, timeval* timeout) = 0;
+    // virtual int writeSendMsg(SendMsg* pMsg, timeval* timeout) = 0;
 };
 }

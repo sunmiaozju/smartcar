@@ -59,6 +59,7 @@ add_executable(socketcan_node
                src/CanBridge.cpp
                src/CanClient.cpp
                src/DefaultCanClient.cpp
+               src/Msg.cpp
                )
 
 ## Rename C++ executable without prefix

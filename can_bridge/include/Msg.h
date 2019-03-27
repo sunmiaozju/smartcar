@@ -4,12 +4,13 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-25 15:48:52
- * @LastEditTime: 2019-03-25 22:41:48
+ * @LastEditTime: 2019-03-26 19:41:14
  */
 
 #ifndef CANLIB_MSG_H
 #define CANLIB_MSG_H
 
+#include "utils.h"
 #include <cstdint>
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -47,7 +48,7 @@ public:
     SendMsg()
     {
         bzero(packet, sizeof(packet));
-        this->setSpeed(0);
+        this->setGradient(0);
         this->setAccMode(1);
         this->setDriveMode(AUTO_MODE);
         this->setBrakeMode(1);
@@ -65,23 +66,35 @@ public:
 
     void setDriveMode(DriveMode driveMode);
 
-    DriveMode getDriveMode();
+    // DriveMode getDriveMode();
 
     void setBrakeMode(int v);
 
-    int getBrakeMode();
+    // int getBrakeMode();
 
     void setShiftLevel(ShiftLevel shiftLevel);
 
-    ShiftLevel getShiftLevel();
+    // ShiftLevel getShiftLevel();
 
     void setSpeed(double v);
 
-    double getSpeed();
+    // double getSpeed();
+
+    void setGradient(double v);
+
+    // double getGradient();
+
+    void setEBrake(bool need = false);
+
+    // int getEBrake();
+
+    void setWheelAngle(double angle);
+
+    // double getWheelAngle();
 
     void setAccMode(int v);
 
-    int getAccMode();
+    // int getAccMode();
 
     void serialize(struct can_frame& frame);
 
