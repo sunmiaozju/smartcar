@@ -80,7 +80,7 @@ void PurePursuitNode::run()
         publishControlCommandStamped(can_get_curvature, curvature);
 
         // for visualization with Rviz
-        visualInRviz();
+        // visualInRviz();
 
         is_pose_set_ = false;
         // is_waypoint_set_ = false;
@@ -377,7 +377,7 @@ void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStam
 void PurePursuitNode::callbackFromWayPoints(const nav_msgs::PathConstPtr &msg)
 {
     // 从way_ponits里面读取目标速度
-    command_linear_velocity_ = 1; //  1m/s
+    command_linear_velocity_ = 2; //  1m/s
 
     // 从消息中保存下载way_points
     for(size_t i = 0; i < msg->poses.size(); i++){
