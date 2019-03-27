@@ -1,0 +1,18 @@
+<launch>
+    <!-- <node pkg="map_server" type="map_server" name="map_server_node" args="$(find static_map)/map_file/map.yaml"/> -->
+    <node pkg="static_map" type="static_map_node" name="static_map_node">
+        <param name="pcd_file" value="$(find static_map)/map_file/yunle_car/zetong_fullmap_leaf2.pcd" />
+        <param name="map_frame" value="map" />
+        <param name="duration" value="1.0" />
+        <remap from="/static_map" to="/map/point_cloud" />
+    </node>
+    <node pkg="rviz" type="rviz" name="Rviz_for_extract_path" args="-d $(find global_planning)/rviz/global_plan_lanecross.rviz" />
+    <node pkg="global_planning" type="load_static_path" name="Global_Planner_static_path" output="screen">
+        <param name="path_file" value="$(find global_planning)/static_path/yunle_zetong.csv" />
+        <param name="dot" value="0.3" />
+        <param name="weight_data" value="0.47" />
+        <param name="weight_smooth" value="0.2" />
+        <param name="tolerance" value="0.1" />
+    </node>
+    <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="global_planning_reconfigure"/> -->
+</launch>
