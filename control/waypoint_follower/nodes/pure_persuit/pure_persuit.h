@@ -61,6 +61,8 @@ private:
     double lookahead_distance_ratio_; // 这个是前视距离与当前速度的比例系数，将前视距离与速度关联起来，速度越快，前视觉距离越远
     double minimum_lookahead_distance_; // 最小前视距离，通过速度乘系数得到的前视距离不小于这个值，不大于当前速度×10
 
+    bool is_last_point;
+
 public:
     PurePursuitNode();
 

@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-18 22:58:34
+ * @LastEditTime: 2019-03-27 13:51:08
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -33,6 +33,7 @@ void LocalTrajectoryGenerator::initROS()
     pub_TrajectoryCost = nh.advertise<smartcar_msgs::Lane>("local_trajectory_cost", 1);
     pub_testLane = nh.advertise<visualization_msgs::Marker>("test_lane", 1);
     pub_test_points = nh.advertise<visualization_msgs::MarkerArray>("test_points", 1);
+    pub_best_trajectories = nh.advertise<smartcar_msgs::Lane>("best_local_trajectories", 1);
 
     nh_private.param<double>("horizonDistance", plan_params.horizonDistance, 200);
     nh_private.param<int>("rollOutNumber", plan_params.rollOutNumber, 6);
@@ -202,6 +203,7 @@ void LocalTrajectoryGenerator::run()
             pub_TrajectoryCost.publish(best_local_lane);
 
             smartcar_msgs::LaneArray local_trajectories_msg;
+            smartcar_msgs::Lane best_local_trajectory;
             for (int m = 0; m < generated_rollouts.size(); m++) {
                 smartcar_msgs::Lane lane_msg;
                 lane_msg.transition_cost = trajectoryCosts[m].transition_cost;
@@ -209,6 +211,19 @@ void LocalTrajectoryGenerator::run()
                 lane_msg.lateral_cost = trajectoryCosts[m].lateral_cost;
                 lane_msg.long_cost = trajectoryCosts[m].longitudinal_cost;
                 lane_msg.cost = trajectoryCosts[m].cost;
+                if (m == best_index) {
+                    best_local_trajectory = lane_msg;
+                    for (size_t ii = 0; ii < generated_rollouts[m].size; ii++) {
+                        smartcar_msgs::Waypoint p;
+                        p.pose.pose.position.x = generated_rollouts[m][ii].pos.x;
+                        p.pose.pose.position.y = generated_rollouts[m][ii].pos.y;
+                        p.pose.pose.position.z = generated_rollouts[m][ii].pos.z;
+                        p.yaw = generated_rollouts[m][ii].v;
+                        best_local_trajectory.waypoints.push_back(p);
+                    }
+                    pub_best_trajectories.publish(best_local_trajectory);
+                }
+
                 local_trajectories_msg.lanes.push_back(lane_msg);
             }
             pub_LocalWeightedTrajectory.publish(local_trajectories_msg);
