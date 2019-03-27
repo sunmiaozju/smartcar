@@ -17,10 +17,34 @@ from utils import utils, utils_pb2ros
 from twisted.internet.protocol import Protocol, Factory, ClientFactory
 from twisted.internet.protocol import DatagramProtocol
 from twisted.protocols.basic import NetstringReceiver
+import ConfigParser
 
 # HOST = '10.0.0.15'
 HOST = "127.0.0.1"
 PORT = 9998
+
+
+class vehicle():
+    pass
+
+
+class yun_server():
+    pass
+
+
+VEHICLE = vehicle()
+SERVER = yun_server()
+
+
+def initial_config():
+    config = ConfigParser.ConfigParser()
+    config.read(proto_path + '/config/config.ini')
+    server_config = config.options("server")
+    vehicle_config = config.options("vehicle")
+
+    VEHICLE.vin = config.get('vehicle', 'vin')
+    SERVER.host = config.get('server', 'host')
+    SERVER.port = config.get('server', 'port')
 
 
 class MyClientProtocol(Protocol):
@@ -37,7 +61,7 @@ class MyClientProtocol(Protocol):
         CurrentPose.msg_type = protoc_msg_pb2.current_pose
         utils.make_PoseStamped(CurrentPose.msg, msg)
 
-        utils.make_vehicle_info(CurrentPose.info, "10000000", True)
+        utils.make_vehicle_info(CurrentPose.info, VEHICLE.vin, True)
 
         binary_msg = CurrentPose.SerializeToString()
         self.transport.write(binary_msg)
@@ -57,7 +81,8 @@ class MyFactory(ClientFactory):
 
 
 if __name__ == "__main__":
+    initial_config()
     rospy.init_node("gateway_client")
     from twisted.internet import reactor
-    reactor.connectTCP(HOST, PORT, MyFactory())
+    reactor.connectTCP(SERVER.host, int(SERVER.port), MyFactory())
     reactor.run()
