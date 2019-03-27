@@ -15,6 +15,6 @@ int main(int argc, char* argv[])
 {
     ros::init(argc, argv, CanBridge::node_name.data());
     CanBridge::Can_app app;
-    // app.run(app);
+    app.run(app);
     return 0;
 }
