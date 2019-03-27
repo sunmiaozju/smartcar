@@ -4,12 +4,16 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-01-29 21:10:23
- * @LastEditTime: 2019-03-13 19:35:24
+ * @LastEditTime: 2019-03-27 20:50:24
  */
 #ifndef PURE_PURSUIT_H
 #define PURE_PURSUIT_H
 
 // ROS includes
+#include "smartcar_msgs/ControlCommandStamped.h"
+#include "smartcar_msgs/Lane.h"
+#include "smartcar_msgs/LaneArray.h"
+#include <can_msgs/ecu.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Path.h>
@@ -19,11 +23,6 @@
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-
-// User defined includes
-#include "smartcar_msgs/ControlCommandStamped.h"
-#include "smartcar_msgs/Lane.h"
-#include "smartcar_msgs/LaneArray.h"
 
 namespace waypoint_follower {
 class PurePursuitNode {
@@ -35,8 +34,11 @@ private:
     // publisher
     ros::Publisher pub_ctl, pub_target;
     ros::Publisher pub_path, pub_car_model;
+    ros::Publisher pub_yunle_control;
+
     // subscriber
-    ros::Subscriber sub_currentpose, sub_lane, sub_speed;
+    ros::Subscriber sub_currentpose,
+        sub_lane, sub_speed;
 
     // constant
     const int LOOP_RATE_; // processing frequency
@@ -62,6 +64,7 @@ private:
     double minimum_lookahead_distance_; // 最小前视距离，通过速度乘系数得到的前视距离不小于这个值，不大于当前速度×10
 
     bool is_last_point;
+    bool is_yunleCar;
 
 public:
     PurePursuitNode();

@@ -1,4 +1,3 @@
-<!-- -->
 <launch>
 
     <arg name="is_linear_interpolation" default="False"/>
@@ -8,6 +7,7 @@
     <arg name="const_lookahead_distance_" default="5"/>
     <arg name="const_velocity_" default="1"/>
     <arg name="is_const_vel_dis_" default="true"/>
+    <arg name="is_yunleCar" default="true"/>
 
     <!-- rosrun waypoint_follower pure_pursuit -->
     <node pkg="waypoint_follower" type="pure_persuit_node" name="pure_pursuit" output="screen" >
@@ -18,5 +18,6 @@
         <param name="const_lookahead_distance_" value="$(arg const_lookahead_distance_)"/>
         <param name="const_velocity_" value="$(arg const_velocity_)"/>
         <param name="is_const_vel_dis_" value="$(arg is_const_vel_dis_)"/>
+        <param name="is_yunleCar" value="$(arg is_yunleCar)"/>
     </node>
 </launch>
