@@ -1,0 +1,14 @@
+<launch>
+	<arg name="instric_path" value="/home/nvidia/bst/calib/intris60.xml"/>
+	<arg name="exstric_path" value="/home/nvidia/bst/calib/extrinsic60.xml"/>
+	<arg name="crop_w" value="768"/>
+	<arg name="crop_h" value="384"/>
+	<arg name="image_topic" value="usb_cam_node/image_raw"/>
+	<node pkg="bst_detection" name="bst_detection_node" type="bst_detection_node" output="screen">
+		<param name="instric_path" value="$(arg instric_path)"/>
+		<param name="exstric_path" value="$(arg exstric_path)"/>
+		<param name="crop_w" value="$(arg crop_w)"/>
+		<param name="crop_h" value="$(arg crop_h)"/>
+		<param name="image_topic" value="$(arg image_topic)"/>
+	</node>
+</launch>
