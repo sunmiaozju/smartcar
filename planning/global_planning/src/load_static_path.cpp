@@ -20,7 +20,6 @@ void load_path(std::string path_file, smartcar_msgs::Lane& path)
         std::cout << "file: " << path_file << " doesn't exist.";
         return;
     }
-    std::cout << "read in: " << path_file << std::endl;
     std::FILE* fp = std::fopen(path_file.c_str(), "r");
     while (!std::feof(fp)) {
         smartcar_msgs::Waypoint way_point;
@@ -88,7 +87,6 @@ void debug_show_result(smartcar_msgs::Lane& path, ros::Publisher pub)
     }
     ros::Duration(3.0).sleep();
     pub.publish(static_path);
-    ROS_WARN_STREAM("publish array");
 }
 }
 
