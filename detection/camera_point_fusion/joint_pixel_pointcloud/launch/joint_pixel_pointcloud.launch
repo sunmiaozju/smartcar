@@ -1,0 +1,26 @@
+<launch>
+
+    <!--<include file="$(find cv_camera)/launch/cv_camera_driver.launch"/>-->
+    
+    <include file="$(find calibration_publisher)/launch/calibration_publisher.launch" />
+    
+    <arg name="pointcloud_input" default="/velodyne_points" /> <!-- PointCloud source topic-->
+    <arg name="image_input" default="/cv_camera/image_raw" /> <!-- Raw Image source topic to be rectified-->
+    <arg name="camera_info_input" default="/camera_info" /> <!-- CameraInfo source topic-->
+    <arg name="fusion_output_topic" default="/points_output"/>
+    <arg name="test_cloud_topic" default="/test_cloud"/>
+
+    <node pkg="joint_pixel_pointcloud" type="joint_pixel_pointcloud" name="pixel_cloud_fusion" output="screen">
+        <param name="pointcloud_input" value="$(arg pointcloud_input)" />
+        <param name="image_input" value="$(arg image_input)" />
+        <param name="camera_info_input" value="$(arg camera_info_input)" />
+        <param name="fusion_output_topic" value="$(arg fusion_output_topic)" />
+        <param name="test_cloud_topic" value="$(arg test_cloud_topic)" />
+
+        <param name="general_slope_threshhold" value="4" />
+        <param name="local_slope_threshold" value="7" />
+        <param name="sensor_height" value="0.37" />
+
+    </node>
+
+</launch>

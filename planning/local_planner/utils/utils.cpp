@@ -4,43 +4,39 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-18 17:07:29
  * @LastEditors: sunm
- * @LastEditTime: 2019-02-25 15:23:55
+ * @LastEditTime: 2019-03-18 13:35:57
  */
 
-#include <utils/utils.h>
-#include <utils/common.h>
 #include <float.h>
+#include <utils/common.h>
+#include <utils/utils.h>
 
-namespace UtilityNS
-{
+namespace UtilityNS {
 /**
  * @description: 获取轨迹上距离当前位置最近的轨迹点（前方） 
  * @param {type} 
  * @return: 
  */
-int getNextClosePointIndex(const std::vector<UtilityNS::WayPoint> &trajectory,
-                           const UtilityNS::WayPoint &curr_pos,
-                           const int &prevIndex)
+int getNextClosePointIndex(const std::vector<UtilityNS::WayPoint>& trajectory,
+    const UtilityNS::WayPoint& curr_pos,
+    const int& prevIndex)
 {
     if (trajectory.size() < 2 || prevIndex < 0)
         return 0;
     double dis = 0, min_dis = DBL_MAX;
     int min_index = prevIndex;
 
-    for (int i = prevIndex; i < trajectory.size(); i++)
-    {
+    for (int i = prevIndex; i < trajectory.size(); i++) {
         dis = distance2points_pow(trajectory[i].pos, curr_pos.pos);
 
-        if (dis < min_dis)
-        {
+        if (dis < min_dis) {
             min_index = i;
             min_dis = dis;
         }
     }
     // printf("index %d min_dis %f\n", min_index, min_dis);
 
-    if (min_index < (int)trajectory.size() - 2)
-    {
+    if (min_index < (int)trajectory.size() - 2) {
         UtilityNS::GPSPoint closest, next;
         closest = trajectory[min_index].pos;
         next = trajectory[min_index + 1].pos;
@@ -59,7 +55,7 @@ int getNextClosePointIndex(const std::vector<UtilityNS::WayPoint> &trajectory,
  * @param {type} 
  * @return: 
  */
-void visualLaneInRviz(const std::vector<UtilityNS::WayPoint> &lane, ros::Publisher pub_testLane)
+void visualLaneInRviz(const std::vector<UtilityNS::WayPoint>& lane, ros::Publisher pub_testLane)
 {
     visualization_msgs::Marker lane_marker;
 
@@ -74,8 +70,7 @@ void visualLaneInRviz(const std::vector<UtilityNS::WayPoint> &lane, ros::Publish
     lane_marker.frame_locked = false;
 
     lane_marker.points.clear();
-    for (size_t k = 0; k < lane.size(); k++)
-    {
+    for (size_t k = 0; k < lane.size(); k++) {
         geometry_msgs::Point wp;
         wp.x = lane[k].pos.x;
         wp.y = lane[k].pos.y;
@@ -91,7 +86,7 @@ void visualLaneInRviz(const std::vector<UtilityNS::WayPoint> &lane, ros::Publish
     pub_testLane.publish(lane_marker);
 }
 
-double calDiffBetweenTwoAngle(const double &a1, const double &a2)
+double calDiffBetweenTwoAngle(const double& a1, const double& a2)
 {
     double diff = a1 - a2;
     if (diff < 0)
@@ -105,18 +100,15 @@ double calDiffBetweenTwoAngle(const double &a1, const double &a2)
  * @param {type} 
  * @return: 
  */
-double cast_from_0_to_2PI_Angle(const double &ang)
+double cast_from_0_to_2PI_Angle(const double& ang)
 {
     double angle = 0;
-    if (ang < -2.0 * M_PI || ang > 2.0 * M_PI)
-    {
+    if (ang < -2.0 * M_PI || ang > 2.0 * M_PI) {
         angle = fmod(ang, 2.0 * M_PI);
-    }
-    else
+    } else
         angle = ang;
 
-    if (angle < 0)
-    {
+    if (angle < 0) {
         angle = 2.0 * M_PI + angle;
     }
     return angle;
@@ -126,28 +118,23 @@ double cast_from_0_to_2PI_Angle(const double &ang)
  * @param {type} 
  * @return: 
  */
-double cast_from_PI_to_PI_Angle(const double &ang)
+double cast_from_PI_to_PI_Angle(const double& ang)
 {
     double angle = 0;
-    if (ang < -2.0 * M_PI || ang > 2.0 * M_PI)
-    {
+    if (ang < -2.0 * M_PI || ang > 2.0 * M_PI) {
         angle = fmod(ang, 2.0 * M_PI);
-    }
-    else
+    } else
         angle = ang;
 
-    if (angle < -M_PI)
-    {
+    if (angle < -M_PI) {
         angle += 2.0 * M_PI;
-    }
-    else if (angle > M_PI)
-    {
+    } else if (angle > M_PI) {
         angle -= 2.0 * M_PI;
     }
     return angle;
 }
 
-double diffBetweenTwoAngle(const double &a1, const double &a2)
+double diffBetweenTwoAngle(const double& a1, const double& a2)
 {
     double diff = a1 - a2;
     if (diff < 0)
@@ -159,29 +146,24 @@ double diffBetweenTwoAngle(const double &a1, const double &a2)
 
 /**
  * @description: 计算某一个轨迹到某一个点的相对位置
- * @param {type} 
- * @return: 
  */
-bool getRelativeInfo(const std::vector<UtilityNS::WayPoint> &trajectory,
-                     const UtilityNS::WayPoint &p,
-                     UtilityNS::RelativeInfo &info)
+bool getRelativeInfo(const std::vector<UtilityNS::WayPoint>& trajectory,
+    const UtilityNS::WayPoint& p,
+    UtilityNS::RelativeInfo& info)
 {
     if (trajectory.size() < 2)
         return false;
 
     UtilityNS::WayPoint p0, p1;
-    if (trajectory.size() == 2)
-    {
+    if (trajectory.size() == 2) {
         p0 = trajectory[0];
         p1 = UtilityNS::WayPoint((p0.pos.x + trajectory[1].pos.x) / 2.0,
-                                  (p0.pos.y + trajectory[1].pos.y) / 2.0,
-                                  (p0.pos.z + trajectory[1].pos.z) / 2.0,
-                                  p0.pos.a);
+            (p0.pos.y + trajectory[1].pos.y) / 2.0,
+            (p0.pos.z + trajectory[1].pos.z) / 2.0,
+            p0.pos.yaw);
         info.iBack = 0;
         info.iFront = 1;
-    }
-    else
-    {
+    } else {
         info.iFront = getNextClosePointIndex(trajectory, p);
 
         if (info.iFront > 0)
@@ -189,30 +171,25 @@ bool getRelativeInfo(const std::vector<UtilityNS::WayPoint> &trajectory,
         else
             info.iBack = 0;
 
-        if (info.iFront == 0)
-        {
+        if (info.iFront == 0) {
             p0 = trajectory[info.iFront];
             p1 = trajectory[info.iFront + 1];
-        }
-        else if (info.iFront > 0 && info.iFront < trajectory.size() - 1)
-        {
+        } else if (info.iFront > 0 && info.iFront < trajectory.size() - 1) {
             p0 = trajectory[info.iFront - 1];
             p1 = trajectory[info.iFront];
-        }
-        else
-        {
+        } else {
             p0 = trajectory[info.iFront - 1];
             p1 = UtilityNS::WayPoint((p0.pos.x + trajectory[info.iFront].pos.x) / 2.0,
-                                      (p0.pos.y + trajectory[info.iFront].pos.y) / 2.0,
-                                      (p0.pos.z + trajectory[info.iFront].pos.z) / 2.0,
-                                      p0.pos.a);
+                (p0.pos.y + trajectory[info.iFront].pos.y) / 2.0,
+                (p0.pos.z + trajectory[info.iFront].pos.z) / 2.0,
+                p0.pos.yaw);
         }
     }
 
     UtilityNS::WayPoint prevWP = p0;
-    UtilityNS::Mat3 rotationMat(-p1.pos.a);
+    UtilityNS::Mat3 rotationMat(-p1.pos.yaw);
     UtilityNS::Mat3 translationMat(-p.pos.x, -p.pos.y);
-    UtilityNS::Mat3 invRotationMat(p1.pos.a);
+    UtilityNS::Mat3 invRotationMat(p1.pos.yaw);
     UtilityNS::Mat3 invTranslationMat(p.pos.x, p.pos.y);
 
     p0.pos = translationMat * p0.pos;
@@ -237,7 +214,7 @@ bool getRelativeInfo(const std::vector<UtilityNS::WayPoint> &trajectory,
     info.perp_point.pos = invTranslationMat * info.perp_point.pos;
 
     info.from_back_distance = hypot(info.perp_point.pos.y - prevWP.pos.y, info.perp_point.pos.x - prevWP.pos.x);
-    info.angle_diff = UtilityNS::diffBetweenTwoAngle(p1.pos.a, p.pos.a) * RAD2DEG;
+    info.angle_diff = UtilityNS::diffBetweenTwoAngle(p1.pos.yaw, p.pos.yaw) * RAD2DEG;
 
     info.direct_distance = hypot(p1.pos.y - p.pos.y, p1.pos.x - p.pos.x);
     return true;

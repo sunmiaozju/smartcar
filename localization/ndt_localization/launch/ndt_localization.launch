@@ -9,6 +9,6 @@
 
   <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
     <rosparam file="$(find ndt_localization)/params/test.yaml" command="load" />
-    <param name="global_map_file" value="$(find static_map)/map_file/yuquan_46w.pcd"/>
+    <param name="global_map_file" value="$(find static_map)/map_file/yunle_car/zetong_fullmap_leaf2.pcd"/>
   </node>
 </launch>

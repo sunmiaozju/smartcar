@@ -1,7 +1,7 @@
 #>>>>>>>>>Smartcar Lab
 laser_frame: "velodyne"                                 # smartcar_lab
 imu_topic: "/imu"               # smartcar_lab
-lidar_topic: "/carla/vehicle/047/autopilot/lidar/front/point_cloud"                           # smartcar_lab
+lidar_topic: "/carla/ego_vehicle/lidar/front/point_cloud"                           # smartcar_lab
 
 #>>>>>>>>>Ese
 # laser_frame: "laser"                                  # ese
@@ -18,8 +18,8 @@ ndt_method_type: 2  # 0:pcl 1:cpu 2:gpu 3:omp 4:gpu_ptr
 
 is_publish_map_full: false
 is_publish_map_filterd_ground: true
-is_publish_map_for_costmap: false
-is_publish_map_for_vectormap: false
+is_publish_map_for_costmap: true
+is_publish_map_for_vectormap: true
 #>>>>>>>>>common params
 base_frame: "base_link"
 odom_topic: "/odom_raw"
