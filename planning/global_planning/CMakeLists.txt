@@ -50,7 +50,13 @@ add_dependencies(global_plan_node
   ${PROJECT_NAME}_gencfg
 )
 
-
+add_executable(load_static_path src/load_static_path.cpp)
+target_link_libraries(load_static_path ${catkin_LIBRARIES})
+add_dependencies(load_static_path
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  # ${PROJECT_NAME}_gencfg
+)
 
 
 

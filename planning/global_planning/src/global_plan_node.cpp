@@ -1019,27 +1019,26 @@ smartcar_msgs::Lane global_plan::smooth_path(smartcar_msgs::Lane path)
         vis_p.pose = p.pose.pose;
         vis_path.poses.push_back(vis_p);
     }
-    pub_vis_path.publish(vis_path);
-    // marker_arrow_array.markers.clear();
-    // pub_arrow_array.publish(marker_arrow_array);
-    // for (int i = 0; i < smoothPath_out.waypoints.size(); i++) {
-    //     visualization_msgs::Marker arrow;
-    //     arrow.header.frame_id = "map";
-    //     // arrow.header.stamp = ros::Time::now();
-    //     arrow.id = i + 1;
-    //     arrow.type = visualization_msgs::Marker::ARROW;
-    //     arrow.action = visualization_msgs::Marker::ADD;
-    //     arrow.scale.x = 0.4;
-    //     arrow.scale.y = 0.1;
-    //     arrow.scale.z = 0.2;
-    //     arrow.color.r = 0;
-    //     arrow.color.g = 0;
-    //     arrow.color.b = 1;
-    //     arrow.color.a = 1;
-    //     arrow.pose = smoothPath_out.waypoints[i].pose.pose;
-    //     marker_arrow_array.markers.push_back(arrow);
-    // }
-    // pub_arrow_array.publish(marker_arrow_array);
+    // pub_vis_path.publish(vis_path);
+    marker_arrow_array.markers.clear();
+    for (int i = 0; i < smoothPath_out.waypoints.size(); i++) {
+        visualization_msgs::Marker arrow;
+        arrow.header.frame_id = "map";
+        // arrow.header.stamp = ros::Time::now();
+        arrow.id = i + 1;
+        arrow.type = visualization_msgs::Marker::ARROW;
+        arrow.action = visualization_msgs::Marker::ADD;
+        arrow.scale.x = 0.4;
+        arrow.scale.y = 0.1;
+        arrow.scale.z = 0.2;
+        arrow.color.r = 0;
+        arrow.color.g = 0;
+        arrow.color.b = 1;
+        arrow.color.a = 1;
+        arrow.pose = smoothPath_out.waypoints[i].pose.pose;
+        marker_arrow_array.markers.push_back(arrow);
+    }
+    pub_arrow_array.publish(marker_arrow_array);
     return smoothPath_out;
 }
 

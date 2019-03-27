@@ -79,6 +79,7 @@ private:
   ros::Publisher pub_ndt_iterations;
   
   ros::Publisher pub_target_map;
+  ros::Publisher pub_global_map;
 
   ros::Subscriber sub_odom_;
   nav_msgs::Odometry::ConstPtr msg_odom_; // under odom frame
