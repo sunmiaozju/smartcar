@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:55:06
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-18 19:42:10
+ * @LastEditTime: 2019-03-27 13:40:00
  */
 
 #ifndef LOCAL_TRAJECTORY_GENERATOR_H
@@ -35,6 +35,7 @@ class LocalTrajectoryGenerator {
     ros::Publisher pub_TrajectoryCost;
     ros::Publisher pub_testLane;
     ros::Publisher pub_test_points;
+    ros::Publisher pub_best_trajectories;
 
     std::vector<UtilityNS::WayPoint> centralPathSection;
     UtilityNS::WayPoint current_pose;

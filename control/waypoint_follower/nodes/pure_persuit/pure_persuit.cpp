@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 10:47:42
- * @LastEditTime: 2019-03-13 19:33:50
+ * @LastEditTime: 2019-03-27 14:09:12
  */
 // ROS Includes
 #include <ros/ros.h>
@@ -24,6 +24,7 @@ PurePursuitNode::PurePursuitNode()
     , command_linear_velocity_(0)
     , next_waypoint_number_(-1)
     , lookahead_distance_(0)
+    , is_last_point(false)
 {
     // 设置了订阅，发布的话题消息， 读取了launch文件中的配置变量
     initForROS();
@@ -47,7 +48,7 @@ void PurePursuitNode::initForROS()
     private_nh_.param("is_const_speed_command_", is_const_speed_command_, true);
 
     // setup subscriber
-    sub_lane = nh_.subscribe("global_path", 10, &PurePursuitNode::callbackFromWayPoints, this);
+    sub_lane = nh_.subscribe("best_local_trajectories", 10, &PurePursuitNode::callbackFromWayPoints, this);
     sub_currentpose = nh_.subscribe("/ndt/current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
     sub_speed = nh_.subscribe("ndt_speed", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
 
@@ -127,7 +128,7 @@ void PurePursuitNode::getNextWaypoint()
         next_waypoint_number_ = -1;
         return;
     }
-    while (1) {
+    while (true) {
         // look for the next waypoint.
         for (int i = search_start_index; i < path_size; i++) {
             // if there exists an effective waypoint
@@ -141,6 +142,9 @@ void PurePursuitNode::getNextWaypoint()
                 is_find_clearest_point = true;
                 if (search_radius > 2)
                     search_radius -= 0.5;
+                if (i == path_size - 1) {
+                    is_last_point = true;
+                }
             }
 
             if ((dis > lookahead_distance_) && (pre_index <= i) && (clearest_points_index <= i)) {
@@ -314,6 +318,10 @@ void PurePursuitNode::publishControlCommandStamped(const bool& can_get_curvature
     geometry_msgs::Twist control_msg;
     control_msg.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
     control_msg.angular.z = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
+    if (is_last_point) {
+        control_msg.linear.x = 0;
+    }
+
     pub_ctl.publish(control_msg);
 }
 
