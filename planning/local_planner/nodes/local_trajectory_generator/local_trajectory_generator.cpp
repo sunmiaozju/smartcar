@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @Date: 2019-02-15 14:54:09
  * @LastEditors: sunm
- * @LastEditTime: 2019-03-27 13:51:08
+ * @LastEditTime: 2019-03-28 15:38:55
  */
 #include <local_trajectory_generator/local_trajectory_generator.h>
 
@@ -213,7 +213,7 @@ void LocalTrajectoryGenerator::run()
                 lane_msg.cost = trajectoryCosts[m].cost;
                 if (m == best_index) {
                     best_local_trajectory = lane_msg;
-                    for (size_t ii = 0; ii < generated_rollouts[m].size; ii++) {
+                    for (size_t ii = 0; ii < generated_rollouts[m].size(); ii++) {
                         smartcar_msgs::Waypoint p;
                         p.pose.pose.position.x = generated_rollouts[m][ii].pos.x;
                         p.pose.pose.position.y = generated_rollouts[m][ii].pos.y;
