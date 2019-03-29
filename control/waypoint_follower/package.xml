@@ -17,8 +17,10 @@
   <build_depend>tf</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
+  <build_depend>can_msgs</build_depend>
 
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>can_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf</exec_depend>

@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
         geometry_msgs
         smartcar_msgs
         nav_msgs
+        can_msgs
         )
 
 catkin_package(
@@ -27,6 +28,7 @@ catkin_package(
         smartcar_msgs
         nav_msgs
         pcl_ros
+        can_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

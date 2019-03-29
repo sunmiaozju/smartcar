@@ -9,9 +9,14 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   geometry_msgs
+  dynamic_reconfigure
 )
 
 find_package(PCL 1.7 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/ray_ground_filter.cfg
+)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -24,10 +29,16 @@ include_directories(
 )
 link_directories(${PCL_LIBRARY_DIRS})
 
-add_executable(${PROJECT_NAME}_node src/ray_ground_filter_node.cpp src/ray_ground_filter_core.cpp)
+add_executable(ray_ground_filter_node src/ray_ground_filter_node.cpp src/ray_ground_filter_core.cpp)
 
 
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(ray_ground_filter_node
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
+)
+
+add_dependencies(ray_ground_filter_node
+  # ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  # ${catkin_EXPORTED_TARGETS}
+  ${PROJECT_NAME}_gencfg
 )

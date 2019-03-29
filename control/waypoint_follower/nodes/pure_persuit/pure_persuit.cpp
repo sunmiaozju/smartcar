@@ -4,13 +4,11 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-02-21 10:47:42
- * @LastEditTime: 2019-03-27 14:09:12
+ * @LastEditTime: 2019-03-27 20:53:56
  */
 // ROS Includes
-#include <ros/ros.h>
-
-// User defined includes
 #include "pure_persuit.h"
+#include <ros/ros.h>
 
 namespace waypoint_follower {
 // Constructor
@@ -46,6 +44,7 @@ void PurePursuitNode::initForROS()
     private_nh_.param("const_velocity_", const_velocity_, double(1)); //1m/s
     private_nh_.param("is_const_lookahead_dis", is_const_lookahead_dis_, true);
     private_nh_.param("is_const_speed_command_", is_const_speed_command_, true);
+    private_nh_.param("is_yunleCar", is_yunleCar, true);
 
     // setup subscriber
     sub_lane = nh_.subscribe("best_local_trajectories", 10, &PurePursuitNode::callbackFromWayPoints, this);
@@ -57,6 +56,7 @@ void PurePursuitNode::initForROS()
     pub_target = nh_.advertise<visualization_msgs::MarkerArray>("target_waypoint", 10);
     pub_path = nh_.advertise<nav_msgs::Path>("followed_path", 10);
     pub_car_model = nh_.advertise<visualization_msgs::Marker>("car_model", 10);
+    pub_yunle_control = nh_.advertise<can_msgs::ecu>("ecu", 50);
 }
 
 void PurePursuitNode::run()
@@ -315,14 +315,25 @@ double PurePursuitNode::calcCurvature(geometry_msgs::Point target)
 
 void PurePursuitNode::publishControlCommandStamped(const bool& can_get_curvature, const double& curvature) const
 {
-    geometry_msgs::Twist control_msg;
-    control_msg.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
-    control_msg.angular.z = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
-    if (is_last_point) {
-        control_msg.linear.x = 0;
+    if (is_yunleCar) {
+        can_msgs::ecu ecu_ctl;
+        ecu_ctl.motor = can_get_curvature ? computeCommandVelocity() : 0;
+        ecu_ctl.steer = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
+        ecu_ctl.shift = ecu_ctl.SHIFT_D;
+        if (is_last_point) {
+            ecu_ctl.motor = 0;
+            ecu_ctl.shift = ecu_ctl.SHIFT_N;
+        }
+        pub_yunle_control.publish(ecu_ctl);
+    } else {
+        geometry_msgs::Twist control_msg;
+        control_msg.linear.x = can_get_curvature ? computeCommandVelocity() : 0;
+        control_msg.angular.z = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
+        if (is_last_point) {
+            control_msg.linear.x = 0;
+        }
+        pub_ctl.publish(control_msg);
     }
-
-    pub_ctl.publish(control_msg);
 }
 
 double PurePursuitNode::computeLookaheadDistance() const

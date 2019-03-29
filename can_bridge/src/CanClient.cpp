@@ -15,7 +15,6 @@ CANClient* CANClient::creatInstance(std::string devname)
     DefaultCanClient* pClient = new DefaultCanClient();
     pClient->setDevname(devname);
     int ret = pClient->init();
-    printf("--------- %d \n", ret);
     if (ret == SUCCESS) {
         return pClient;
     }
