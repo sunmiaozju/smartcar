@@ -27,7 +27,8 @@ odom_frame: "/odom"
 base_frame: "/base_link"
 
 map_topic: "/map/point_cloud"
-odom_topic: "/odom/imu"
+# odom_topic: "/odom/imu"
+odom_topic: "/odomImu/odom_imu"
 
 tf_timeout: 1.0 # time waiting for available tf --timeout result breakdown
 odom_timeout: 1.5 # time waiting for next odom msg, too long means large uncertainty --timeout result "useless info"
