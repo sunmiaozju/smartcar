@@ -64,7 +64,7 @@ void Can_app::ecu_cb(const can_msgs::ecu& in_msg)
         ROS_ERROR("can module error");
         return;
     }
-    sMsg.print();
+    // sMsg.print();
     pCanClient->writeSendMsg(&sMsg);
 }
 }

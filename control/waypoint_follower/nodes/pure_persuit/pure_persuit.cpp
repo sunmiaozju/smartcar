@@ -47,7 +47,8 @@ void PurePursuitNode::initForROS()
     private_nh_.param("is_yunleCar", is_yunleCar, true);
 
     // setup subscriber
-    sub_lane = nh_.subscribe("best_local_trajectories", 10, &PurePursuitNode::callbackFromWayPoints, this);
+    // sub_lane = nh_.subscribe("best_local_trajectories", 10, &PurePursuitNode::callbackFromWayPoints, this);
+    sub_lane = nh_.subscribe("global_path", 10, &PurePursuitNode::callbackFromWayPoints, this);
     sub_currentpose = nh_.subscribe("/ndt/current_pose", 10, &PurePursuitNode::callbackFromCurrentPose, this);
     sub_speed = nh_.subscribe("ndt_speed", 10, &PurePursuitNode::callbackFromCurrentVelocity, this);
 
@@ -79,7 +80,7 @@ void PurePursuitNode::run()
         publishControlCommandStamped(can_get_curvature, curvature);
 
         // for visualization with Rviz
-        visualInRviz();
+        // visualInRviz();
 
         is_pose_set_ = false;
         // is_waypoint_set_ = false;
@@ -318,7 +319,16 @@ void PurePursuitNode::publishControlCommandStamped(const bool& can_get_curvature
     if (is_yunleCar) {
         can_msgs::ecu ecu_ctl;
         ecu_ctl.motor = can_get_curvature ? computeCommandVelocity() : 0;
-        ecu_ctl.steer = can_get_curvature ? atan(wheel_base_ * curvature) : 0;
+        
+        double steer = atan(wheel_base_ * curvature);
+        
+        if(steer > 0){
+            steer = steer / 0.06 * 140; 
+        }else{
+            steer = steer / 0.06 * 93; 
+        }
+        ecu_ctl.steer = can_get_curvature ? steer : 0;
+        
         ecu_ctl.shift = ecu_ctl.SHIFT_D;
         if (is_last_point) {
             ecu_ctl.motor = 0;
@@ -369,7 +379,7 @@ void PurePursuitNode::callbackFromCurrentVelocity(const geometry_msgs::TwistStam
 void PurePursuitNode::callbackFromWayPoints(const smartcar_msgs::LaneConstPtr& msg)
 {
     // 从way_ponits里面读取目标速度
-    command_linear_velocity_ = 1; //  1m/s
+    command_linear_velocity_ = 2; //  1m/s
 
     current_waypoints_ = msg->waypoints;
 
