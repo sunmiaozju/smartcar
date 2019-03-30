@@ -1,6 +1,4 @@
 <launch>
-    <!-- <arg name="lidar_frame" default="/laser" />
-    <arg name="lidar_topic" default="/lslidar_point_cloud" /> -->
 
     <arg name="lidar_frame" default="/velodyne" />
     <arg name="lidar_topic" default="/velodyne_points" />

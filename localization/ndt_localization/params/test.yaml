@@ -3,6 +3,7 @@
 laser_frame: "/velodyne"                    # smartcar_lab
 imu_topic: "/imu"                   # smartcar_lab
 lidar_topic: "/velodyne_points"                       # smartcar_lab
+# lidar_topic: "/ray_filter/velodyne_points_filtered"
 
 #>>>>>>>>>Ese
 
@@ -12,12 +13,12 @@ lidar_topic: "/velodyne_points"                       # smartcar_lab
 
 #>>>>>>>>Switch
 use_odom: false   # if you want to shut down imu/odom , just set this param "false"
-use_local_target: true
+use_local_target: false
 if_init_pose_with_param: false  # if you want to initial the start-pose with given param, set it "true", or you want to set it in rviz manmally, set it "false"
 debug: false
 method_type: 3   # pcl:0 gpu:1 omp:2 cpu:3
 
-is_filter_ground: true   # set this to filter out the ground of the input point cloud
+is_filter_ground: false   # set this to filter out the ground of the input point cloud
 
 
 #>>>>>>>>Comman params

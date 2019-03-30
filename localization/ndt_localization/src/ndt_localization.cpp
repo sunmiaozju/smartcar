@@ -39,6 +39,7 @@ bool NDTLocalization::init()
     pnh_.param<std::string>("odom_topic", param_odom_topic_, std::string("/odom"));
     // pnh_.param<std::string>("imu_topic", param_imu_topic_, std::string("/imu_base_link"));
     pnh_.param<std::string>("lidar_topic", param_lidar_topic_, std::string("/velodyne_points"));
+    std::cout << "lidar topic is " << param_lidar_topic_ << std::endl;
 
     pnh_.param<double>("tf_timeout", param_tf_timeout_, 0.05);
     pnh_.param<bool>("use_odom", param_use_odom_, true);
@@ -130,7 +131,7 @@ bool NDTLocalization::init()
     }
     pub_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("/ndt/current_pose", 10);
     pub_path = nh_.advertise<nav_msgs::Path>("/debug/history_path", 10);
-    pub_localPC_handled = nh_.advertise<sensor_msgs::PointCloud2>("/velodyne_no_ground", 10);
+    // pub_localPC_handled = nh_.advertise<sensor_msgs::PointCloud2>("/velodyne_no_ground", 10);
 
     if (param_debug_) {
         pub_ndt_time = nh_.advertise<std_msgs::Float32>("/ndt_align_time", 10);
@@ -212,11 +213,6 @@ void NDTLocalization::init_pose_with_param()
  */
 bool NDTLocalization::load_map(std::string map_file)
 {
-    if (!pose_init_) {
-        ROS_WARN("initial pose not set, cannot update target_map");
-        return false;
-    }
-
     pub_global_map = nh_.advertise<sensor_msgs::PointCloud2>("/globalmap/debug_pc", 10);
     sensor_msgs::PointCloud2::Ptr msg_globalmap(new sensor_msgs::PointCloud2);
     pcl::io::loadPCDFile(map_file, *msg_globalmap);
@@ -225,6 +221,11 @@ bool NDTLocalization::load_map(std::string map_file)
     msg_globalmap->header.frame_id = "map";
     pub_global_map.publish(*msg_globalmap);
     std::cout << "Success load map: " << map_file << std::endl;
+
+    if (!pose_init_) {
+        ROS_WARN("initial pose not set, cannot update target_map");
+        return false;
+    }
 
     if (use_local_target) {
         update_target_map(); // >>>>>>>>>>更新target地图
@@ -449,11 +450,11 @@ void NDTLocalization::pointCloudCB(const sensor_msgs::PointCloud2::ConstPtr& msg
         filter.setMinDistance(1.5);
         filter.convert(tmp, local_pc);
 
-        sensor_msgs::PointCloud2::Ptr localPC_ptr(new sensor_msgs::PointCloud2);
-        pcl::toROSMsg(*local_pc, *localPC_ptr);
-        localPC_ptr->header.frame_id = "velodyne";
-        localPC_ptr->header.stamp = ros::Time::now();
-        pub_localPC_handled.publish(*localPC_ptr);
+        // sensor_msgs::PointCloud2::Ptr localPC_ptr(new sensor_msgs::PointCloud2);
+        // pcl::toROSMsg(*local_pc, *localPC_ptr);
+        // localPC_ptr->header.frame_id = "velodyne";
+        // localPC_ptr->header.stamp = ros::Time::now();
+        // pub_localPC_handled.publish(*localPC_ptr);
 
     } else {
         local_pc = tmp;
