@@ -1,0 +1,10 @@
+<launch>
+    <node pkg="global_planning" type="load_static_path" name="Global_Planner_static_path" output="screen">
+        <param name="path_file" value="$(find global_planning)/static_path/yunle_zetong.csv" />
+        <param name="dot" value="0.3" />
+        <param name="weight_data" value="0.47" />
+        <param name="weight_smooth" value="0.2" />
+        <param name="tolerance" value="0.1" />
+    </node>
+    <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="global_planning_reconfigure"/> -->
+</launch>

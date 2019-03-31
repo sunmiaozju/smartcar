@@ -7,6 +7,8 @@
  * @LastEditTime: 2019-03-25 15:13:13
  */
 #include "joint_pixel_pointcloud.h"
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
 
 using namespace NODE_JOINT_PIXEL_POINTCLOUD;
 
@@ -23,6 +25,12 @@ void PixelCloudFusion::ImageCallback(const sensor_msgs::Image::ConstPtr& image_m
     // 图像去畸变
     // 使用相机内参和畸变系数可以图像去畸变
     cv::undistort(image, current_frame, camera_instrinsics, distortion_coefficients);
+
+    static image_transport::ImageTransport it(nh);
+    static image_transport::Publisher pub_image = it.advertise("identified_image", 1);
+    static sensor_msgs::ImagePtr msg; 
+    msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", current_frame).toImageMsg();
+    pub_image.publish(msg);
 
     image_frame_id = image_msg->header.frame_id;
     image_size.height = current_frame.rows;
