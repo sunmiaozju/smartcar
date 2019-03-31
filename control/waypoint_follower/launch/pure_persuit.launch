@@ -5,7 +5,7 @@
     <arg name="lookahead_distance_ratio" default="4"/>
     <arg name="minimum_lookahead_distance_" default="5"/>
     <arg name="const_lookahead_distance_" default="5"/>
-    <arg name="const_velocity_" default="1.5"/>
+    <arg name="const_velocity_" default="2.0"/>
     <arg name="is_const_vel_dis_" default="true"/>
     <arg name="is_yunleCar" default="true"/>
 
