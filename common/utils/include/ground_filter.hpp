@@ -78,7 +78,8 @@ public:
     RayGroundFilter()
     {
         SENSOR_MODEL = 16;
-        SENSOR_HEIGHT = 0.37;
+        // SENSOR_HEIGHT = 0.37;
+        SENSOR_HEIGHT = 1.7;
         local_max_slope_ = 5.0;
         general_max_slope_ = 3.0;
         min_height_threshold_ = 0.05;
@@ -92,7 +93,7 @@ public:
         maxX = 1;
         minY = -1;
         maxY = 1;
-        pub_debug_pc = nh.advertise<sensor_msgs::PointCloud2>("RayFilter_debug", 10);
+        pub_debug_pc = nh.advertise<sensor_msgs::PointCloud2>("RayFilter/velodyne_points_filtered", 10);
     };
 
     ~RayGroundFilter(){};

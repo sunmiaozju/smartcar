@@ -72,11 +72,10 @@ bool RayGroundFilter::init_param()
     nh.param<double>("remove_min_y", remove_min_y, -0.5);
     nh.param<double>("remove_max_x", remove_max_x, 0);
     nh.param<double>("remove_max_y", remove_max_y, 0.5);
-    std::cout << "clip_height: " << CLIP_HEIGHT << std::endl;
-    std::cout << "       minX: " << minX << std::endl;
-    std::cout << "       maxX: " << maxX << std::endl;
-    std::cout << "       minY: " << minY << std::endl;
-    std::cout << "       maxY: " << maxY << std::endl;
+    std::cout << "remove_min_x: " << remove_min_x << std::endl;
+    std::cout << "remove_min_y: " << remove_min_y << std::endl;
+    std::cout << "remove_max_x: " << remove_max_x << std::endl;
+    std::cout << "remove_max_y: " << remove_max_y << std::endl;
     std::cout << std::endl;
 
     // nh.param<double>("default_cluster_height",default_cluster_height,0.05);
