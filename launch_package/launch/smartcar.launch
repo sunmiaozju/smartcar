@@ -2,8 +2,12 @@
     <include file="$(find static_tf)/launch/static_tf.launch" />
 
     <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+    
     <include file="$(find hall_encoder)/launch/hall_encoder_node.launch" />
+    
     <include file="$(find razor_imu_9dof)/launch/razor-pub.launch" />
+
+    <include file="$(find calibration_publisher)/launch/rccar_calibration_publisher.launch" />
 
     <include file="$(find odom_imu)/launch/odom_imu.launch" />
 

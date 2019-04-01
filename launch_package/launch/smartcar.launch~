@@ -1,42 +1,39 @@
 <launch>
-    
-    <include file="$(find static_tf)/launch/static_tf_yunlecar.launch" />
+    <include file="$(find static_tf)/launch/static_tf.launch" />
 
     <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
     
+    <include file="$(find hall_encoder)/launch/hall_encoder_node.launch" />
+    
+    <include file="$(find razor_imu_9dof)/launch/razor-pub.launch" />
+
     <include file="$(find calibration_publisher)/launch/yunlecar_calibration_publisher.launch" />
 
-    <!-- <include file="$(find hall_encoder)/launch/hall_encoder_node.launch" />-->
-    
-    <!-- <include file="$(find razor_imu_9dof)/launch/razor-pub.launch" />-->
-
-    <!-- <include file="$(find odom_imu)/launch/odom_imu.launch" /> -->
+    <include file="$(find odom_imu)/launch/odom_imu.launch" />
 
     <node pkg="map_server" type="map_server" name="map_server_node" args="$(find static_map)/map_file/map.yaml"/>
     
     <node pkg="ndt_localization" type="ndt_localization_node" name="ndt_localization_node" output="screen">
         <rosparam file="$(find ndt_localization)/params/test.yaml" />
-        <param name="global_map_file" value="$(find static_map)/map_file/yunle_car/zetong_fullmap_leaf2.pcd"/>
+        <param name="global_map_file" value="$(find static_map)/map_file/yuquan_40w_no_ground_white.pcd"/>
     </node>
 
     <include file="$(find waypoint_follower)/launch/pure_persuit.launch" />
     
-    <include file="$(find can_bridge)/launch/can_bridge.launch" />
-    
-    <!-- <include file="$(find cv_camera)/launch/cv_camera_driver.launch" /> -->
+    <include file="$(find cv_camera)/launch/cv_camera_driver.launch" />
 
-    <!-- <node pkg="rosserial_python" type="serial_node.py" name="serial_node" args="/dev/ttyACM0"/> -->
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" args="/dev/ttyACM0"/>
 
     <node pkg="rviz" type="rviz" name="Rviz_for_extract_path" args="-d $(find global_planning)/rviz/global_plan_lanecross.rviz" />
     
-    <!-- <node pkg="global_planning" type="global_plan_node" name="Global_planner_with_defined_paths" output="screen">
+    <node pkg="global_planning" type="global_plan_node" name="Global_planner_with_defined_paths" output="screen">
         <param name="file_path" value="$(find global_planning)/path_file/" />
         <param name="debug" value="true" />
         <param name="weight_data" value="0.47" />
         <param name="weight_smooth" value="0.2" />
         <param name="tolerance" value="0.1" />
         <param name="Visualize_Simulation" value="false" />
-    </node> -->
+    </node>
     
 
 </launch>

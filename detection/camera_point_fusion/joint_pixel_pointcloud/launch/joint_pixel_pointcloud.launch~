@@ -2,6 +2,8 @@
 
     <!--<include file="$(find cv_camera)/launch/cv_camera_driver.launch"/>-->
     
+    <include file="$(find calibration_publisher)/launch/calibration_publisher.launch" />
+    
     <arg name="pointcloud_input" default="/velodyne_points" /> <!-- PointCloud source topic-->
     <arg name="image_input" default="/cv_camera/image_raw" /> <!-- Raw Image source topic to be rectified-->
     <arg name="camera_info_input" default="/camera_info" /> <!-- CameraInfo source topic-->

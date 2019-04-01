@@ -1,10 +1,12 @@
 <launch>
+
+    <arg name="is_yunle_car" default="true" />
     
     <include file="$(find static_tf)/launch/static_tf_yunlecar.launch" />
 
     <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
     
-    <include file="$(find calibration_publisher)/launch/yunlecar_calibration_publisher.launch" />
+    <include if="$(arg is_yunle_car)" file="$(find calibration_publisher)/launch/yunlecar_calibration_publisher.launch" />
 
     <!-- <include file="$(find hall_encoder)/launch/hall_encoder_node.launch" />-->
     
