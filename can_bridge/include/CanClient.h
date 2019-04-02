@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-25 15:25:24
- * @LastEditTime: 2019-03-26 19:45:18
+ * @LastEditTime: 2019-04-02 16:37:39
  */
 
 #include "Msg.h"
@@ -17,6 +17,8 @@ namespace CanBridge {
 class CANListener {
 public:
     virtual void onReceiveMsg(RevMsg* msg) = 0;
+
+    virtual void onReceiveMsg(BatteryMsg* msg) = 0;
 
     virtual ~CANListener() = default;
 };

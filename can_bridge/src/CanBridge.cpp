@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-25 15:20:45
- * @LastEditTime: 2019-03-27 10:00:28
+ * @LastEditTime: 2019-04-02 16:36:06
  */
 
 #include <CanBridge.h>
@@ -27,7 +27,8 @@ Can_app::Can_app()
 void Can_app::initROS()
 {
     sub_ecu = nh.subscribe("ecu", 500, &Can_app::ecu_cb, this);
-    pub_feedback = nh.advertise<can_msgs::feedback>("feed_back", 500);
+    pub_vehicle_status = nh.advertise<can_msgs::vehicle_status>("vehicle_status", 500);
+    pub_battery_status = nh.advertise<can_msgs::battery>("battery_status", 500);
     nh_private.param<std::string>("dev_name", dev_name, "can0");
 }
 
@@ -37,7 +38,7 @@ void Can_app::run(const Can_app& a)
     listener->getPublisher(a);
     pCanClient->registerListener(listener);
     pCanClient->start();
-    ros::Rate loop_rate(5);
+    ros::Rate loop_rate(10);
     ros::spin();
     pCanClient->shutdown();
     CanBridge::CANClient::disposal(pCanClient);

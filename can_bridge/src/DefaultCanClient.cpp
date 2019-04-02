@@ -4,7 +4,7 @@
  * @Github: https://github.com/sunmiaozju
  * @LastEditors: sunm
  * @Date: 2019-03-25 19:41:40
- * @LastEditTime: 2019-03-31 13:18:47
+ * @LastEditTime: 2019-04-02 16:43:40
  */
 #include "DefaultCanClient.h"
 #include <cassert>
@@ -87,11 +87,11 @@ void DefaultCanClient::run()
     fd_set writeSet;
     struct can_filter rfilter[3];
     // filter info, accept 0x51 only.
-    rfilter[0].can_id = 0x51;
+    rfilter[0].can_id = 0x51; // 车辆状态信息
     rfilter[0].can_mask = CAN_SFF_MASK;
-    rfilter[1].can_id = 1000;
+    rfilter[1].can_id = 1000; // 毫米波雷达信息 暂时保留
     rfilter[1].can_mask = CAN_SFF_MASK;
-    rfilter[2].can_id = 0x02AA;
+    rfilter[2].can_id = 0x02AA; // 电池状态信息
     rfilter[2].can_mask = CAN_SFF_MASK;
     setsockopt(this->canFd, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
     this->running = 1;
@@ -125,10 +125,19 @@ void DefaultCanClient::run()
                 fprintf(stderr, "incomplete can_frame\n");
                 continue;
             }
-            //fprintf(stdout, "received msg: ID = 0x%X DLC=%d data[0]=0x%X\n", canFrame.can_id, canFrame.can_dlc,
-            //        canFrame.data[0]);
+
+            //车辆状态信息监听
             if (canFrame.can_id == 0x51) {
                 RevMsg msg(canFrame.data);
+                for (auto e = listeners.begin(); e != listeners.end(); ++e) {
+                    CANListener* canListener = (*e);
+                    canListener->onReceiveMsg(&msg);
+                }
+            }
+
+            //电池状态信息监听
+            if (canFrame.can_id == 0x02AA) {
+                BatteryMsg msg(canFrame.data);
                 for (auto e = listeners.begin(); e != listeners.end(); ++e) {
                     CANListener* canListener = (*e);
                     canListener->onReceiveMsg(&msg);
@@ -139,13 +148,6 @@ void DefaultCanClient::run()
             //     for (auto e = listeners.begin(); e != listeners.end(); ++e) {
             //         CANListener* canListener = (*e);
             //         canListener->onReceiveMsg(&msg);
-            //     }
-            // }
-            // if (canFrame.can_id == 0x02AA) {
-            //     BatteryMsg msg(canFrame.data);
-            //     for (auto e = listeners.begin(); e != listeners.end(); ++e) {
-            //         CANListener* canListener = (*e);
-            //         canListener->onReceivedMsg(&msg);
             //     }
             // }
         }
